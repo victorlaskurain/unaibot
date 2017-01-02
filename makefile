@@ -32,7 +32,7 @@ PROTOCOL   = arduino
 $(if $(filter $(notdir $(SOURCE_DIR)),$(notdir $(CURDIR))),\
   $(error Please run the makefile from the binary tree.))
 
-# function to create static libraries
+# Function to create static libraries
 # $(call make-library, library-name, source-file-list)
 define make-library
   libraries += $1
@@ -41,7 +41,12 @@ define make-library
 	@$(AR) $(ARFLAGS) $$@ $$^
 endef
 
-# function to create programs
+# Function to create programs.
+#
+# Also creates a phony target to upload the program to the arduino. If
+# the program is serial_test/program, then the upload target will be
+# serial_test_program_upload.
+#
 # $(call make-program, program-name, source-file-list, library-list)
 define make-program
   programs  += $1.hex
@@ -75,11 +80,13 @@ sources      :=
 objects      = $(call source-to-object,$(sources))
 dependencies = $(call source-to-deps,$(sources))
 
+# add all modules to the include dir, set search paths for source files
 include_dirs := $(SOURCE_DIR)/include $(addprefix $(SOURCE_DIR)/, $(modules))
 CPPFLAGS     += $(addprefix -I ,$(include_dirs))
 vpath %.h   $(include_dirs)
 vpath %.cpp $(SOURCE_DIR)
 
+# create output directories as soon as possible
 create-output-directories :=                            \
         $(shell for f in $(modules);                    \
                 do                                      \
@@ -120,16 +127,5 @@ endif
 	@echo $@
 	@$(CXX) $(CXXFLAGS) -S -o $@ $<
 
-# rule to
+# rule to generate the hex file (ready to upload) from the elf binary
 %.hex: %.elf ; $(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
-
-echo:
-	@echo ECHO
-	@echo modules: $(modules)
-	@echo includes: $(patsubst %,$(SOURCE_DIR)/%/module.mk, $(modules))
-	@echo sources: $(sources)
-	@echo objects: $(objects)
-	@echo dependencies: $(dependencies)
-	@echo local_src: $(local_src)
-	@echo libraries: $(libraries)
-	@echo programs: $(programs)
