@@ -38,6 +38,7 @@ define make-library
   libraries += $1
   sources   += $2
   $1: $(call source-to-object,$2)
+	@echo $$@
 	@$(AR) $(ARFLAGS) $$@ $$^
 endef
 
@@ -53,9 +54,11 @@ define make-program
   sources   += $2
   $1.hex: $1.elf
   $1.elf: $(call source-to-object,$2) $3
-	$(CXX) $(CXXFLAGS) -o $$@ $$^
+	@echo $$@
+	@$(CXX) $(CXXFLAGS) -o $$@ $$^
   .PHONY: $(subst /,_,$1)_upload
   $(subst /,_,$1)_upload: $1.hex
+	@echo upload
 	$(AVRDUDE) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
 endef
 
@@ -128,4 +131,6 @@ endif
 	@$(CXX) $(CXXFLAGS) -S -o $@ $<
 
 # rule to generate the hex file (ready to upload) from the elf binary
-%.hex: %.elf ; $(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
+%.hex: %.elf
+	@echo $@
+	@$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
