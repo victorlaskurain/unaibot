@@ -252,4 +252,17 @@ namespace vla {
                    not_available,
                    serial_sync_write> serial_9600_sync_write_only;
 
+    serial_9600& get_serial_debug();
+    template<typename serial_t>
+    void wait(serial_t &ser, const char* msg = 0)
+    {
+        uint8_t buffer[80];
+        if (msg) {
+            write(ser, msg);
+            write(ser, "\r\n");
+        }
+        write(ser, "press enter\r\n");
+        read_line(ser, buffer, sizeof buffer, '\r');
+    }
+
 }
