@@ -28,6 +28,8 @@ PART       = m328p
 PORT       = /dev/ttyACM0
 PROTOCOL   = arduino
 
+# verbosity control
+Q          =
 # prevent running from source directory
 $(if $(filter $(notdir $(SOURCE_DIR)),$(notdir $(CURDIR))),\
   $(error Please run the makefile from the binary tree.))
@@ -39,7 +41,7 @@ define make-library
   sources   += $2
   $1: $(call source-to-object,$2)
 	@echo $$@
-	@$(AR) $(ARFLAGS) $$@ $$^
+	$Q$(AR) $(ARFLAGS) $$@ $$^
 endef
 
 # Function to create programs.
@@ -55,7 +57,7 @@ define make-program
   $1.hex: $1.elf
   $1.elf: $(call source-to-object,$2) $3
 	@echo $$@
-	@$(CXX) $(CXXFLAGS) -o $$@ $$^
+	$Q$(CXX) $(CXXFLAGS) -o $$@ $$^
   .PHONY: $(subst /,_,$1)_upload
   $(subst /,_,$1)_upload: $1.hex
 	@echo upload
@@ -123,14 +125,14 @@ endif
 # rule to compile c++ files to object files
 %.o: %.cpp
 	@echo $@
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 # rule to generate assembly files for analysis
 %.s: %.cpp
 	@echo $@
-	@$(CXX) $(CXXFLAGS) -S -o $@ $<
+	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -S -o $@ $<
 
 # rule to generate the hex file (ready to upload) from the elf binary
 %.hex: %.elf
 	@echo $@
-	@$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
+	$Q$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
