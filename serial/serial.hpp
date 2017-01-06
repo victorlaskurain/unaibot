@@ -1,5 +1,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
 #include "circular_buffer.hpp"
 
 namespace vla {

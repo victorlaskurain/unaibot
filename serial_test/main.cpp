@@ -1,11 +1,8 @@
+#include "serial.hpp"
+#include "circular_buffer.hpp"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#define BAUD 9600
-#include <util/setbaud.h>
-#include <stdint.h>
-#include "serial.hpp"
-#include "circular_buffer.hpp"
 
 static void write_async()
 {
@@ -86,7 +83,6 @@ static void echo()
         vla::write(ser, buffer);
         vla::write(ser, "\r\n");
     }
-
 }
 
 int main(void)
