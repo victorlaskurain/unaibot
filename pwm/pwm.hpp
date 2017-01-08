@@ -7,16 +7,6 @@
 
 namespace vla {
 
-    /*
-     * Timer output	Arduino output	Chip pin	Pin name
-     * OC0A                      6        12        PD6
-     * OC0B                      5        11        PD5
-     * OC1A                      9        15        PB1
-     * OC1B                     10        16        PB2
-     * OC2A                     11        17        PB3
-     * OC2B                      3         5        PD3
-     */
-
     enum class clock_source {
         STOP,
         PRESCALE_1,
@@ -67,7 +57,10 @@ namespace vla {
         {
             out_pin::set_mode_output();
         }
-
+        inline ~pwm()
+        {
+            set_level(0);
+        }
         inline void set_level(uint8_t v)
         {
             comparator_register::ref() = v;
@@ -86,10 +79,19 @@ namespace vla {
                                 TCCR2B_t,
                                 timer_mode::PHASE_CORRECT_PWM> timer2_pcpwm;
 
+    /*
+     * Timer output	Arduino output	Chip pin	Pin name
+     * OC0A                      6        12        PD6
+     * OC0B                      5        11        PD5
+     * OC1A                      9        15        PB1
+     * OC1B                     10        16        PB2
+     * OC2A                     11        17        PB3
+     * OC2B                      3         5        PD3
+     */
     typedef pwm<timer0_pcpwm, OCR0A_t, PORTD6_t> pcpwm_portd6;
     typedef pwm<timer0_pcpwm, OCR0B_t, PORTD5_t> pcpwm_portd5;
-    typedef pwm<timer2_pcpwm, OCR2A_t, PORTB3_t> pcpwm_portd3;
-    typedef pwm<timer2_pcpwm, OCR2B_t, PORTD3_t> pcpwm_portb3;
+    typedef pwm<timer2_pcpwm, OCR2A_t, PORTD3_t> pcpwm_portb3;
+    typedef pwm<timer2_pcpwm, OCR2B_t, PORTB3_t> pcpwm_portd3;
 
 }
 

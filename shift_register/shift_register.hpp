@@ -27,6 +27,10 @@ namespace vla {
             ds::set_mode_output();
             output_enable::clear();
         }
+        ~shift_register()
+        {
+            commit(0);
+        }
         bit_field_t data;
         inline void commit(bit_field_t d)
         {
