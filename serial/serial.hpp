@@ -1,3 +1,6 @@
+#ifndef VLA_SERIAL_SERIAL_HPP
+#define VLA_SERIAL_SERIAL_HPP
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
@@ -266,3 +269,5 @@ namespace vla {
     }
 
 }
+
+#endif // VLA_SERIAL_SERIAL_HPP

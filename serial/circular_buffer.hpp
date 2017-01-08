@@ -1,5 +1,5 @@
-#ifndef VLA_CIRCULAR_BUFFER_CPP
-#define VLA_CIRCULAR_BUFFER_CPP
+#ifndef VLA_CIRCULAR_BUFFER_HPP
+#define VLA_CIRCULAR_BUFFER_HPP
 
 #include <iterator>
 

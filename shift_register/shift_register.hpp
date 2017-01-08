@@ -1,3 +1,6 @@
+#ifndef VLA_SHIFT_REGISTER_SHIFT_REGISTER_HPP
+#define VLA_SHIFT_REGISTER_SHIFT_REGISTER_HPP
+
 #include <avr/io.h>
 #include <registers.hpp>
 #include <cstddef>
@@ -52,3 +55,5 @@ namespace vla {
     };
 
 }
+
+#endif // VLA_SHIFT_REGISTER_SHIFT_REGISTER_HPP

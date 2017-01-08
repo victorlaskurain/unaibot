@@ -1,3 +1,6 @@
+#ifndef VLA_REGISTERS_REGISTERS_HPP
+#define VLA_REGISTERS_REGISTERS_HPP
+
 #include <avr/io.h>
 
 namespace vla {
@@ -194,5 +197,6 @@ namespace vla {
         }
     };
 
-
 }
+
+#endif // VLA_REGISTERS_REGISTERS_HPP

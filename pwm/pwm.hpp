@@ -1,3 +1,6 @@
+#ifndef VLA_PWM_HPP
+#define VLA_PWM_HPP
+
 #include <avr/io.h>
 #include <util/delay.h>
 #include <registers.hpp>
@@ -89,3 +92,5 @@ namespace vla {
     typedef pwm<timer2_pcpwm, OCR2B_t, PORTD3_t> pcpwm_portb3;
 
 }
+
+#endif // VLA_PWM_HPP
