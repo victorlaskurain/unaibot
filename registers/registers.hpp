@@ -124,4 +124,75 @@ namespace vla {
     typedef pin_t<PORTD_t, 6> PORTD6_t;
     typedef pin_t<PORTD_t, 7> PORTD7_t;
 
+    struct TCCR0A_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR0A;
+        }
+    };
+    typedef pin_t<TCCR0A_t, COM0A1> COM0A1_t;
+    typedef pin_t<TCCR0A_t, COM0B1> COM0B1_t;
+    typedef pin_t<TCCR0A_t, WGM00> WGM00_t;
+
+    struct TCCR0B_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR0B;
+        }
+    };
+
+    struct OCR0A_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return OCR0A;
+        }
+    };
+
+    struct OCR0B_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return OCR0B;
+        }
+    };
+
+    struct TCCR2A_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR2A;
+        }
+    };
+    typedef pin_t<TCCR2A_t, COM0A1> COM2A1_t;
+    typedef pin_t<TCCR2A_t, COM0B1> COM2B1_t;
+    typedef pin_t<TCCR2A_t, WGM00> WGM20_t;
+
+    struct TCCR2B_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR2B;
+        }
+    };
+
+    struct OCR2A_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return OCR2A;
+        }
+    };
+
+    struct OCR2B_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return OCR2B;
+        }
+    };
+
+
 }
