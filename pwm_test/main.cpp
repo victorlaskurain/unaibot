@@ -1,8 +1,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdint.h>
-#include <pwm.hpp>
-#include <serial.hpp>
+#include <vla/pwm.hpp>
+#include <vla/serial.hpp>
 
 int main(void) {
     vla::timer0_pcpwm timer0;

@@ -1,4 +1,4 @@
-#include "serial.hpp"
+#include <vla/serial.hpp>
 
 namespace vla {
     serial_9600 serial_port;

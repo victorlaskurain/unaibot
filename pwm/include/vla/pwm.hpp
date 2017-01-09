@@ -3,7 +3,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include <registers.hpp>
+#include <vla/registers.hpp>
 
 namespace vla {
 

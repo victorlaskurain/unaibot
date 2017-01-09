@@ -1,8 +1,8 @@
 #ifndef VLA_MOTOR_MOTOR_DRIVER_HPP
 #define VLA_MOTOR_MOTOR_DRIVER_HPP
 
-#include <shift_register.hpp>
-#include <pwm.hpp>
+#include <vla/shift_register.hpp>
+#include <vla/pwm.hpp>
 
 namespace vla {
 

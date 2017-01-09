@@ -86,16 +86,18 @@ objects      = $(call source-to-object,$(sources))
 dependencies = $(call source-to-deps,$(sources))
 
 # add all modules to the include dir, set search paths for source files
-include_dirs := $(SOURCE_DIR)/include $(addprefix $(SOURCE_DIR)/, $(modules))
+include_dirs := $(SOURCE_DIR)/include $(addprefix $(SOURCE_DIR)/, $(addsuffix /include,$(modules)))
 CPPFLAGS     += $(addprefix -I ,$(include_dirs))
 vpath %.h   $(include_dirs)
+vpath %.hpp $(include_dirs)
 vpath %.cpp $(SOURCE_DIR)
 
 # create output directories as soon as possible
-create-output-directories :=                            \
-        $(shell for f in $(modules);                    \
-                do                                      \
-                  $(TEST) -d $$f || $(MKDIR) $$f;       \
+create-output-directories :=										\
+        $(shell for f in $(modules);								\
+                do													\
+                  $(TEST) -d $$f         || $(MKDIR) $$f;			\
+                  $(TEST) -d $$f/include || $(MKDIR) $$f/include;   \
                 done)
 
 all:

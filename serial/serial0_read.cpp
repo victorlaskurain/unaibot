@@ -1,6 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "serial.hpp"
+#include <vla/serial.hpp>
 
 namespace vla {
     read_cb_t  on_serial_received = 0;

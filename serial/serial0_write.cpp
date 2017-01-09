@@ -1,6 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "serial.hpp"
+#include <vla/serial.hpp>
 
 namespace vla {
     write_cb_t on_serial_ready_to_send = 0;
