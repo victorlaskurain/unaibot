@@ -1,0 +1,45 @@
+#ifndef VLA_COMMAND_COMMAND_HPP
+#define VLA_COMMAND_COMMAND_HPP
+
+#include <stdint.h>
+
+namespace vla {
+
+    template <typename ...Ts>
+    class command_distpatcher
+    {
+    public:
+        inline uint8_t operator()(const char *str)
+        {
+            return 1;
+        }
+    };
+    template<typename T, typename ...Ts>
+    class command_distpatcher<T, Ts...> {
+    public:
+        command_distpatcher(T t, const Ts...args)
+            :cmd_head(t),
+             cmd_rest(args...)
+        {
+        }
+        inline uint8_t operator()(const char *str)
+        {
+            auto retval = cmd_head(str);
+            if (retval != 0) {
+                retval = cmd_rest(str);
+            }
+            return retval;
+        }
+    private:
+        T                          cmd_head;
+        command_distpatcher<Ts...> cmd_rest;
+    };
+
+    template<typename ...Ts>
+    command_distpatcher<Ts...> make_command_distpatcher(const Ts&... args)
+    {
+        return command_distpatcher<Ts...>{args...};
+    }
+}
+
+#endif // VLA_COMMAND_COMMAND_HPP

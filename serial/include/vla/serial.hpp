@@ -223,6 +223,13 @@ namespace vla {
             s.write(buff[written]);
         }
     }
+    template<typename Serial>
+    inline void write_line(Serial &s, const char *str)
+    {
+        write(s, reinterpret_cast<const uint8_t*>(str));
+        write(s, "\r\n");
+
+    }
     template <typename Serial>
     uint8_t read(Serial &s)
     {
