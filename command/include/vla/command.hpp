@@ -6,7 +6,7 @@
 namespace vla {
 
     template <typename ...Ts>
-    class command_distpatcher
+    class command_dispatcher
     {
     public:
         inline uint8_t operator()(const char *str)
@@ -15,9 +15,9 @@ namespace vla {
         }
     };
     template<typename T, typename ...Ts>
-    class command_distpatcher<T, Ts...> {
+    class command_dispatcher<T, Ts...> {
     public:
-        command_distpatcher(T t, const Ts...args)
+        command_dispatcher(T t, const Ts...args)
             :cmd_head(t),
              cmd_rest(args...)
         {
@@ -32,13 +32,13 @@ namespace vla {
         }
     private:
         T                          cmd_head;
-        command_distpatcher<Ts...> cmd_rest;
+        command_dispatcher<Ts...> cmd_rest;
     };
 
     template<typename ...Ts>
-    command_distpatcher<Ts...> make_command_distpatcher(const Ts&... args)
+    command_dispatcher<Ts...> make_command_dispatcher(const Ts&... args)
     {
-        return command_distpatcher<Ts...>{args...};
+        return command_dispatcher<Ts...>{args...};
     }
 }
 

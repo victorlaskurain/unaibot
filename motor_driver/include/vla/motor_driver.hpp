@@ -29,7 +29,9 @@ namespace vla {
         IDLE      = 0x00,
         FORWARD   = 0x01,
         BACKWARD  = 0x02,
-        STOP      = 0x11
+        STOP      = 0x11,
+        FIRST     = IDLE,
+        LAST      = STOP
     };
 
     template <typename pwm, pole_t pole1, pole_t pole2>

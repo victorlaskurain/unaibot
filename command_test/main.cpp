@@ -76,10 +76,10 @@ static uint8_t cf(const char*s)
 
 int main()
 {
-    auto empty_dispatcher = make_command_distpatcher();
+    auto empty_dispatcher = make_command_dispatcher();
     empty_dispatcher("");
     c1 c1_instance;
-    auto dispatcher = make_command_distpatcher(c1_instance, c2(), &cf);
+    auto dispatcher = make_command_dispatcher(c1_instance, c2(), &cf);
     const static char *command_strings[] = {
         "kaixo",
         "c2 10 100", "c2 10 -100",
