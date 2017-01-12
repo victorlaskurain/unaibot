@@ -3,8 +3,7 @@
 
 #include <avr/io.h>
 #include <vla/registers.hpp>
-#include <cstddef>
-#include <stdio.h>
+#include <stddef.h>
 
 namespace vla {
 

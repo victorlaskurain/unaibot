@@ -1,7 +1,8 @@
 #ifndef VLA_CIRCULAR_BUFFER_HPP
 #define VLA_CIRCULAR_BUFFER_HPP
 
-#include <iterator>
+#include <vla/iterator.hpp>
+#include <stddef.h>
 
 namespace vla {
 
