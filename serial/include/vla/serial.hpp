@@ -5,7 +5,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include "circular_buffer.hpp"
+#include <vla/circular_buffer.hpp>
 
 namespace vla {
 
