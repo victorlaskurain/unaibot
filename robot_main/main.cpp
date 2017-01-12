@@ -1,7 +1,6 @@
 #include <vla/motor_driver.hpp>
 #include <vla/serial.hpp>
 #include <vla/command.hpp>
-#include <stdlib.h>
 
 using namespace vla;
 
@@ -19,26 +18,54 @@ static const bool skip_prefix(const char **strptr, const char *prefix)
     return false;
 }
 
-static bool read_uint8(const char **strptr, uint8_t *v)
+static bool read_hex_char(char c, uint8_t *v) {
+    if (c >= '0' && c <= '9') {
+        *v += (c - '0');
+        return true;
+    }
+    if (c >= 'a' && c <= 'f') {
+        *v += (c - 'a') + 10;
+        return true;
+    }
+    if (c >= 'A' && c <= 'F') {
+        *v += (c - 'A') + 10;
+        return true;
+    }
+    return false;
+}
+
+static bool read_uint8_hex(const char **strptr, uint8_t *v)
 {
-    char *end;
-    long number = strtol(*strptr, &end, 0);
-    if (*strptr == end) {
+    const char *str = *strptr;
+    while (*str == ' ') {
+        ++str;
+    }
+    if (*str != '0') {
         return false;
     }
-    if (number < 0 || number > UINT8_MAX) {
+    ++str;
+    if (*str != 'x') {
         return false;
     }
-    *v = number;
-    *strptr = end;
+    ++str;
+    *v = 0;
+    if (!read_hex_char(*str, v)) {
+        return false;
+    }
+    *v <<= 4;
+    ++str;
+    if (!read_hex_char(*str, v)) {
+        return false;
+    }
+    ++str;
+    *strptr = str;
     return true;
 }
 
 static bool read_direction(const char **strptr, direction_t *v)
 {
-    char *end;
-    long number = strtol(*strptr, &end, 0);
-    if (*strptr == end) {
+    uint8_t number = 0;
+    if (!read_uint8_hex(strptr, &number)) {
         return false;
     }
     if (number < uint8_t(direction_t::FIRST) ||
@@ -46,7 +73,6 @@ static bool read_direction(const char **strptr, direction_t *v)
         return false;
     }
     *v = direction_t(number);
-    *strptr = end;
     return true;
 }
 
@@ -57,11 +83,11 @@ enum {
 /**
  * Examples:
  * Motor 2 and motor 3 at about halve speed forward
- * SPEEDS2 1 128 1 128
+ * SPEEDS2 0x01 0x80 1 0x80
  * Motor 2 halve backward, motor 3 full forward
- * SPEEDS2 2 128 1 255
+ * SPEEDS2 0x02 0x80 0x01 0xff
  * Stop both motors
- * SPEEDS2 0 0 0 0
+ * SPEEDS2 0x00 0x00 0x00 0x00
  */
 struct set_speeds_cmd
 {
@@ -74,9 +100,9 @@ struct set_speeds_cmd
         direction_t m2_direction, m3_direction;
         if (skip_prefix (&str, "SPEEDS2")       &&
             read_direction(&str, &m2_direction) &&
-            read_uint8    (&str, &m2_speed)     &&
+            read_uint8_hex(&str, &m2_speed)     &&
             read_direction(&str, &m3_direction) &&
-            read_uint8    (&str, &m3_speed)) {
+            read_uint8_hex(&str, &m3_speed)) {
             motors.motor2.set_direction(m2_direction);
             motors.motor2.set_speed    (m2_speed);
             motors.motor3.set_direction(m3_direction);
@@ -90,8 +116,8 @@ struct set_speeds_cmd
 
 static const char hex_chr[] = {'0', '1', '2', '3',
                                '4', '5', '6', '7',
-                               '8', '9', 'A', 'B',
-                               'C', 'D', 'E', 'F'};
+                               '8', '9', 'a', 'b',
+                               'c', 'd', 'e', 'f'};
 static const char* hex(uint8_t n) {
     static char hex_buffer[] = "0x00";
     hex_buffer[2] = hex_chr[n>>4];
