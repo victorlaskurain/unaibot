@@ -1,1 +1,4 @@
 build
+web_control/node_modules
+web_control/bower_components
+web_control/html/lib

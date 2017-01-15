@@ -1,0 +1,27 @@
+* {
+    box-sizing: border-box;
+}
+
+#left-wrapper, #right-wrapper {
+    position:absolute;
+    top: 0;
+    height: 100vh;
+    width: 15vw;
+    padding: 1vw;
+}
+
+#left-wrapper {
+    left: 0;
+}
+
+#right-wrapper {
+    right: 0;
+}
+
+#left,#right {
+    background-color: lightgray;
+    border-radius: 7.5vw;
+    width: 100%;
+    height: 100%;
+    box-shadow: 0 0 5px black;
+}
