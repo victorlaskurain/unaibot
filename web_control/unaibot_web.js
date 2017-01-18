@@ -1,4 +1,3 @@
-#!/usr/bin/nodejs
 'use strict';
 var restify    = require('restify'),
     morgan     = require('morgan'),
@@ -15,13 +14,13 @@ function main() {
         },
         // simulate serial port with:
         // socat PTY,link=tmp/vmodem0,rawer,wait-slave,crnl -
-        serial      = new SerialPort('/home/victor/tmp/vmodem0', {
+        serial      = new SerialPort('vmodem0', {
             baudRate: 9600,
             parser:   SerialPort.parsers.readline('\r\n')
         }),
         serialCbs = [];
     serial.on('open', function() {
-        console.log('SERIAL PORT OPENED');
+        handleSpeed2({data:[0, 0, 0, 0]});
     });
     serial.on('data', function(serialData) {
         console.log(serialData);
@@ -36,20 +35,27 @@ function main() {
         });
     }
     function handleSpeed2(msg) {
-        console.log(['handleSpeed2', msg]);
-        if (msg[0] < 0 || msg[0] > 3   ||
-            msg[1] < 0 || msg[1] > 255 ||
-            msg[3] < 0 || msg[3] > 3   ||
-            msg[4] < 0 || msg[4] > 255) {
+        var values = msg.data;
+        if (!values || values.length != 4 ||
+            values[0] < 0 || values[0] > 3   ||
+            values[1] < 0 || values[1] > 255 ||
+            values[2] < 0 || values[2] > 3   ||
+            values[3] < 0 || values[3] > 255) {
             return new Promise(function(resolve, reject) {
                 resolve('ERROR');
             });
         }
-        var serialMessage = 'SPEED2 ' + msg.data.map(Math.round)
-                                                .map(toHex).join(' ');
+        var serialMessage = 'SPEEDS2 ' + msg.data.map(Math.round)
+                                                .map(toHex).join(' ') + '\r';
         function toHex(n) {
-            return '0x' + n.toString(16);
+            var str = n.toString(16);
+            if (str.length == 1) {
+                return '0x0' + n.toString(16);
+            } else {
+                return '0x'  + n.toString(16);
+            }
         }
+        console.log(serialMessage);
         serial.write(serialMessage);
         return new Promise(function(resolve, reject) {
             serialCbs.push(resolve);
