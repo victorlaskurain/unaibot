@@ -11,7 +11,6 @@ function _toHex(n) {
     }
 }
 
-
 function UnaiBot(serialPort, serialCfg) {
     if (!(this instanceof UnaiBot)) {
         return new UnaiBot(serialPort, serialCfg);

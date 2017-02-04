@@ -1,15 +1,23 @@
 'use strict';
 
-var restify  = require('restify'),
-    morgan   = require('morgan'),
-    WsServer = require('ws').Server,
-    Promise  = require('promise'),
-    UnaiBot  = require('./lib/unaibot');
+var restify    = require('restify'),
+    morgan     = require('morgan'),
+    WsServer   = require('ws').Server,
+    Promise    = require('promise'),
+    UnaiBot    = require('./lib/unaibot'),
+    defaults   = {
+        'serial-port':  '/dev/ttyACM0',
+        'http-basedir': '/opt/unaibot/share/',
+        'http-port':    8080
+    },
+    options    = require('minimist')(process.argv.slice(2),
+                                     {default: defaults}),
+    serialPort = options['serial-port'];
 
 function main() {
     var server      = restify.createServer({}),
         wsServer    = new WsServer({server: server.server}),
-        unaiBot     = new UnaiBot('vmodem0'),
+        unaiBot     = new UnaiBot(serialPort),
         handlerByType = {
             'PING!': handlePing,
             'SPEED2': handleSpeed2
@@ -40,11 +48,11 @@ function main() {
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
     server.get(/.*/, restify.serveStatic({
-        directory: 'html',
+        directory: defaults['http-basedir'] + 'html',
         default: 'index.html',
         maxAge: 1
     }));
-    server.listen(8080);
+    server.listen(options['http-port']);
 }
 
 main();

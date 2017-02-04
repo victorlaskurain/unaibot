@@ -1,0 +1,11 @@
+[Unit]
+Description=Unaibot web control
+After=syslog.target
+
+[Service]
+EnvironmentFile=/opt/unaibot/etc/unaibot.conf
+ExecStart=/opt/unaibot/bin/unaibot_web
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
