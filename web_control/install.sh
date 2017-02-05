@@ -15,3 +15,4 @@ node /opt/unaibot/share/unaibot_web.js --serial-port="\$SERIAL_PORT" --http-base
 EOF
 chmod a+x $INSTALLDIR/bin/unaibot_web
 sudo systemctl link /opt/unaibot/etc/systemd/system/unaibot.service
+sudo systemctl enable /opt/unaibot/etc/systemd/system/unaibot.service
