@@ -10,13 +10,28 @@
     <title>UnaiBot</title>
   </head>
   <body>
+    <div id="video-wrapper">
+      <canvas id="video-canvas"></canvas>
+    </div>
     <div id="left-wrapper">
       <div id="left"></div>
     </div>
     <div id="right-wrapper">
       <div id="right"></div>
     </div>
+    <div id="cam-toggle-wrapper">
+      <div id="cam-toggle" class="off">
+        <span class="show-on on">Cam. on</span>
+        <span class="show-on off">Cam. off</span>
+      </div>
+    </div>
     <script src="js/require-setup.js"></script>
     <script data-main="js/main" src="lib/require.js"></script>
+	<script type="text/javascript" src="lib/jsmpeg.min.js"></script>
+	<script type="text/javascript">
+		var canvas = document.getElementById('video-canvas');
+		var url = 'ws://'+document.location.hostname+':8080/unaibot/cam';
+		var player = new JSMpeg.Player(url, {canvas: canvas});
+	</script>
   </body>
 </html>

@@ -14,7 +14,8 @@ window.botApi = api;
         left              = document.getElementById('left'),
         right             = document.getElementById('right'),
         lSpeed            = null,
-        rSpeed            = null;
+        rSpeed            = null,
+        camToggle         = document.getElementById('cam-toggle');
 
     window.document.documentElement.addEventListener('touchstart', function(evt) {
         switch (evt.target) {
@@ -63,6 +64,16 @@ window.botApi = api;
                 api.setSpeed2(lSpeed, rSpeed);
             }
         }
-
     });
+
+    camToggle.addEventListener('click', function(evt) {
+        if (camToggle.classList.contains('off')) {
+            camToggle.className = 'on';
+            api.camOn();
+        } else {
+            camToggle.className = 'off';
+            api.camOff();
+        }
+    });
+
 });

@@ -8,7 +8,9 @@ function($) {
           MOTOR_FIRST    = MOTOR_IDLE,
           MOTOR_LAST     = MOTOR_STOP;
     const MESSAGE_PING   = 'PING!',
-          MESSAGE_SPEED2 = 'SPEED2';
+          MESSAGE_SPEED2 = 'SPEED2',
+          MESSAGE_CAMON  = 'CAMON',
+          MESSAGE_CAMOFF = 'CAMOFF';
     var server     = null,
         msgCounter = 0,
         promises   = {},
@@ -104,8 +106,16 @@ function($) {
         return _makeMessagePromise(MESSAGE_PING);
     }
 
+    function camOn() {
+        return _makeMessagePromise(MESSAGE_CAMON);
+    }
+
+    function camOff() {
+        return _makeMessagePromise(MESSAGE_CAMOFF);
+    }
+
     function _init() {
-        server = new window.WebSocket('ws://' + window.location.host + '/unaibot');
+        server = new window.WebSocket('ws://' + window.location.host + '/unaibot/cmd');
         server.onerror = function(evt) {
             console.log(['WS ERROR', evt]);
         };
@@ -139,6 +149,8 @@ function($) {
     return {
         ping: ping,
         setSpeed2: setSpeed2,
+        camOff: camOff,
+        camOn: camOn,
         MOTOR_IDLE: MOTOR_IDLE,
         MOTOR_FORWARD: MOTOR_FORWARD,
         MOTOR_BACKWARD: MOTOR_BACKWARD,
