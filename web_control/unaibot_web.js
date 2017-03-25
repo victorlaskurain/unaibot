@@ -15,7 +15,8 @@ var exec       = require('child_process').exec,
         'http-basedir':      '/opt/unaibot/share/',
         'http-port':         8080,
         'cam-stream-port':   8081,
-        'cam-stream-secret': 'supersecret'
+        'cam-stream-secret': 'supersecret',
+        'video-dev':         '/dev/video0'
     },
     options    = require('minimist')(process.argv.slice(2),
                                      {default: defaults}),
@@ -30,7 +31,7 @@ function main() {
         wsCamServer = new WsServer({noServer: true}),
         streamServer,
         unaiBot     = new UnaiBot(serialPort),
-        botCam      = new BotCam(broadcastVideo.bind(undefined, wsCamServer)),
+        botCam      = new BotCam(options['video-dev']),
         handlerByType = {
             'PING!':  handlePing,
             'SPEED2': handleSpeed2,
@@ -60,8 +61,20 @@ function main() {
             resolve();
         });
     }
+    botCam.on('data', broadcastVideo.bind(undefined, wsCamServer));
     wsCmdServer.on('connection', function initCmdConnection(conn) {
         console.log(['new cmd connection']);
+        function _sendVideoOff() {
+            conn.send(JSON.stringify({evt: {type: 'videoOff'}}));
+        }
+        function _sendVideoOn() {
+            conn.send(JSON.stringify({evt: {type: 'videoOn'}}));
+        }
+        if (botCam.isVideoOn()) {
+            _sendVideoOn();
+        }
+        botCam.on('videoOff', _sendVideoOff);
+        botCam.on('videoOn' , _sendVideoOn);
         conn.on('message', function incoming(msgJson) {
             console.log(['new message', msgJson]);
             var msg     = JSON.parse(msgJson),
@@ -73,6 +86,11 @@ function main() {
                     conn.send(JSON.stringify({id:msgId, data: data}));
                 });
             }
+        });
+        conn.on('close', function onClose() {
+            console.log('close cmd connection');
+            botCam.removeListener('videoOff', _sendVideoOff);
+            botCam.removeListener('videoOn' , _sendVideoOn);
         });
     });
     function broadcastVideo(ws, data) {

@@ -134,12 +134,17 @@ function($) {
         server.onmessage = function(evt) {
             var msg     = JSON.parse(evt.data),
                 promise = promises[msg.id];
-            if (!promise) {
+            if (!promise && !msg.evt) {
                 console.log(['UNEXPECTED DATA', msg]);
                 return;
             }
-            delete promises[msg.id];
-            promise.resolve(msg.data);
+            if (promise) {
+                delete promises[msg.id];
+                promise.resolve(msg.data);
+            }
+            if (msg.evt) {
+                $(document).trigger(msg.evt);
+            }
         };
     }
 

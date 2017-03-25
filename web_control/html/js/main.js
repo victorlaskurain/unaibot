@@ -1,6 +1,5 @@
 define(['api'],
 function(api) {
-window.botApi = api;
     var doc               = window.document,
         docEl             = doc.documentElement,
         requestFullScreen = docEl.requestFullscreen ||
@@ -66,12 +65,20 @@ window.botApi = api;
         }
     });
 
+    $(document).on('videoOff', function() {
+        camToggle.className = 'off';
+        return true;
+    });
+
+    $(document).on('videoOn', function() {
+        camToggle.className = 'on';
+        return true;
+    });
+
     camToggle.addEventListener('click', function(evt) {
         if (camToggle.classList.contains('off')) {
-            camToggle.className = 'on';
             api.camOn();
         } else {
-            camToggle.className = 'off';
             api.camOff();
         }
     });
