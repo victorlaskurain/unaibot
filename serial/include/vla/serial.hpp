@@ -17,6 +17,19 @@ namespace vla {
 #include <util/setbaud.h>
         UBRR0H = UBRRH_VALUE;
         UBRR0L = UBRRL_VALUE;
+#undef BAUD
+        }
+    };
+
+    struct serial_speed_19200
+    {
+        serial_speed_19200()
+        {
+#define BAUD 19200
+#include <util/setbaud.h>
+        UBRR0H = UBRRH_VALUE;
+        UBRR0L = UBRRL_VALUE;
+#undef BAUD
         }
     };
 
@@ -35,14 +48,8 @@ namespace vla {
         inline serial_async_write()
         {
             vla::write_buffer = &write_buffer;
-            vla::on_serial_ready_to_send = [](void *p) {
-                auto buff = static_cast<write_buffer_t*>(p);
-                if (!buff->empty()) {
-                    UDR0 = buff->pop_front();
-                } else {
-                    UCSR0B &= ~(1<<UDRIE0);
-                }
-            };
+            vla::on_serial_ready_to_send =
+                serial_async_write::on_serial_ready_to_send;
             UCSR0B |= 1<<TXEN0;
             sei();
         }
@@ -76,6 +83,15 @@ namespace vla {
             return &write_buffer;
         }
     private:
+        static void on_serial_ready_to_send(void *p)
+        {
+            auto buff = static_cast<write_buffer_t*>(p);
+            if (!buff->empty()) {
+                UDR0 = buff->pop_front();
+            } else {
+                UCSR0B &= ~(1<<UDRIE0);
+            }
+        }
         write_buffer_t write_buffer;
     };
 
@@ -86,9 +102,7 @@ namespace vla {
         inline serial_async_read()
         {
             vla::read_buffer  = &read_buffer;
-            vla::on_serial_received = [](void *buff, uint8_t byte) {
-                static_cast<read_buffer_t*>(buff)->push_back(byte);
-            };
+            vla::on_serial_received = on_serial_received;
             UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
             sei();
         }
@@ -121,6 +135,10 @@ namespace vla {
         }
     private:
         read_buffer_t read_buffer;
+        static void on_serial_received(void *buff, uint8_t byte)
+        {
+            static_cast<read_buffer_t*>(buff)->push_back(byte);
+        };
     };
 
     struct serial_sync_write
@@ -251,18 +269,6 @@ namespace vla {
         buff[i] = '\0';
         return i;
     }
-
-    typedef serial<serial_speed_9600,
-                   serial_sync_read,
-                   serial_sync_write> serial_9600;
-    typedef serial<serial_speed_9600,
-                   serial_async_read<16>,
-                   serial_async_write<16>> serial_9600_async;
-    typedef serial<serial_speed_9600,
-                   not_available,
-                   serial_sync_write> serial_9600_sync_write_only;
-
-    serial_9600& get_serial_debug();
     template<typename serial_t>
     void wait(serial_t &ser, const char* msg = 0)
     {
@@ -274,6 +280,28 @@ namespace vla {
         write(ser, "press enter\r\n");
         read_line(ser, buffer, sizeof buffer, '\r');
     }
+
+    typedef serial<serial_speed_9600,
+                   serial_sync_read,
+                   serial_sync_write> serial_9600;
+    typedef serial<serial_speed_9600,
+                   serial_async_read<16>,
+                   serial_async_write<16>> serial_9600_async;
+    typedef serial<serial_speed_9600,
+                   not_available,
+                   serial_sync_write> serial_9600_sync_write_only;
+
+    typedef serial<serial_speed_19200,
+                   serial_sync_read,
+                   serial_sync_write> serial_19200;
+    typedef serial<serial_speed_19200,
+                   serial_async_read<16>,
+                   serial_async_write<16>> serial_19200_async;
+    typedef serial<serial_speed_19200,
+                   not_available,
+                   serial_sync_write> serial_19200_sync_write_only;
+
+    serial_9600& get_serial_debug();
 
 }
 
