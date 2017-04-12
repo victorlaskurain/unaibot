@@ -4,10 +4,10 @@ import serial
 import sys
 
 def echo():
-    s = "agur\n\0";
+    s = "agur\r";
     while True:
         ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-        sys.stdout.write(s)
+        sys.stdout.write(s + '\n')
         ser.write(s)
         sys.stdout.write(ser.readline())
 def only_read():

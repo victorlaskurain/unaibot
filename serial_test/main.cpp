@@ -79,6 +79,7 @@ static void echo()
     vla::write(ser, "READY\r\n");
     while(1) {
         vla::read_line(ser, buffer, buffer_size, '\r');
+        _delay_ms(100);
         vla::write(ser, "->");
         vla::write(ser, buffer);
         vla::write(ser, "\r\n");
