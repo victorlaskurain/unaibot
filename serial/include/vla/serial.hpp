@@ -33,6 +33,18 @@ namespace vla {
         }
     };
 
+    struct serial_speed_38400
+    {
+        serial_speed_38400()
+        {
+#define BAUD 38400
+#include <util/setbaud.h>
+        UBRR0H = UBRRH_VALUE;
+        UBRR0L = UBRRL_VALUE;
+#undef BAUD
+        }
+    };
+
     typedef void (*read_cb_t)(void*, uint8_t);
     typedef void (*write_cb_t)(void*);
 
@@ -301,8 +313,17 @@ namespace vla {
                    not_available,
                    serial_sync_write> serial_19200_sync_write_only;
 
-    serial_9600& get_serial_debug();
+    typedef serial<serial_speed_38400,
+                   serial_sync_read,
+                   serial_sync_write> serial_38400;
+    typedef serial<serial_speed_38400,
+                   serial_async_read<16>,
+                   serial_async_write<16>> serial_38400_async;
+    typedef serial<serial_speed_38400,
+                   not_available,
+                   serial_sync_write> serial_38400_sync_write_only;
 
+    serial_9600& get_serial_debug();
 }
 
 #endif // VLA_SERIAL_SERIAL_HPP
