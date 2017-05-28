@@ -9,6 +9,8 @@
 
 namespace vla {
 
+    const int SERIAL_ASYNC_BUFFER_SIZE_DEFAULT = 16;
+
     struct serial_speed_9600
     {
         serial_speed_9600()
@@ -54,18 +56,18 @@ namespace vla {
     extern void*      write_buffer;
 
     template <size_t BufferSize>
-    struct serial_async_write
+    struct basic_serial_async_write
     {
         typedef circular_buffer<uint8_t, BufferSize> write_buffer_t;
-        inline serial_async_write()
+        inline basic_serial_async_write()
         {
             vla::write_buffer = &write_buffer;
             vla::on_serial_ready_to_send =
-                serial_async_write::on_serial_ready_to_send;
+                basic_serial_async_write::on_serial_ready_to_send;
             UCSR0B |= 1<<TXEN0;
             sei();
         }
-        inline ~serial_async_write()
+        inline ~basic_serial_async_write()
         {
             UCSR0B &= ~((1<<UDRIE0));
             vla::on_serial_ready_to_send = nullptr;
@@ -107,18 +109,21 @@ namespace vla {
         write_buffer_t write_buffer;
     };
 
+    using serial_async_write =
+        basic_serial_async_write<SERIAL_ASYNC_BUFFER_SIZE_DEFAULT>;
+
     template<size_t BufferSize>
-    struct serial_async_read
+    struct basic_serial_async_read
     {
         typedef circular_buffer<uint8_t, BufferSize>  read_buffer_t;
-        inline serial_async_read()
+        inline basic_serial_async_read()
         {
             vla::read_buffer  = &read_buffer;
             vla::on_serial_received = on_serial_received;
             UCSR0B |= (1<<RXEN0)|(1<<RXCIE0);
             sei();
         }
-        inline ~serial_async_read()
+        inline ~basic_serial_async_read()
         {
             UCSR0B &= ~((1<<RXEN0)|(1<<RXCIE0));
             vla::on_serial_received = nullptr;
@@ -152,6 +157,9 @@ namespace vla {
             static_cast<read_buffer_t*>(buff)->push_back(byte);
         };
     };
+
+    using serial_async_read =
+        basic_serial_async_read<SERIAL_ASYNC_BUFFER_SIZE_DEFAULT>;
 
     struct serial_sync_write
     {
@@ -297,8 +305,8 @@ namespace vla {
                    serial_sync_read,
                    serial_sync_write> serial_9600;
     typedef serial<serial_speed_9600,
-                   serial_async_read<16>,
-                   serial_async_write<16>> serial_9600_async;
+                   serial_async_read,
+                   serial_async_write> serial_9600_async;
     typedef serial<serial_speed_9600,
                    not_available,
                    serial_sync_write> serial_9600_sync_write_only;
@@ -307,8 +315,8 @@ namespace vla {
                    serial_sync_read,
                    serial_sync_write> serial_19200;
     typedef serial<serial_speed_19200,
-                   serial_async_read<16>,
-                   serial_async_write<16>> serial_19200_async;
+                   serial_async_read,
+                   serial_async_write> serial_19200_async;
     typedef serial<serial_speed_19200,
                    not_available,
                    serial_sync_write> serial_19200_sync_write_only;
@@ -317,8 +325,8 @@ namespace vla {
                    serial_sync_read,
                    serial_sync_write> serial_38400;
     typedef serial<serial_speed_38400,
-                   serial_async_read<16>,
-                   serial_async_write<16>> serial_38400_async;
+                   serial_async_read,
+                   serial_async_write> serial_38400_async;
     typedef serial<serial_speed_38400,
                    not_available,
                    serial_sync_write> serial_38400_sync_write_only;

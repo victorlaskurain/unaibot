@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <cstddef>
 
 static void write_async()
 {
@@ -36,6 +37,75 @@ static void write_sync()
         }
         vla::write(ser, "\r\n");
         _delay_ms(1000);
+    }
+}
+
+enum class br_t {
+    BR_9600  = 9600,
+    BR_19200 = 19200,
+};
+
+static void write_async_at_speed_inner(vla::serial_async_write &ser)
+{
+    while(1) {
+        for (char i = '1'; i < '6'; ++i) {
+            ser.write(i);
+            vla::write(ser, "ASYNC012\r\n");
+            PORTB = 0x20;
+            _delay_ms(500);
+            PORTB = 0x00;
+            _delay_ms(500);
+        }
+        vla::write(ser, "\r\n");
+        _delay_ms(1000);
+    }
+}
+
+static void write_async_at_speed(br_t br)
+{
+    switch (br) {
+    case br_t::BR_9600: {
+        vla::serial_9600_async ser;
+        write_async_at_speed_inner(ser);
+        break;
+    }
+    case br_t::BR_19200: {
+        vla::serial_19200_async ser;
+        write_async_at_speed_inner(ser);
+        break;
+    }
+    }
+}
+
+static void write_sync_at_speed_inner(vla::serial_sync_write &ser)
+{
+    while(1) {
+        for (char i = '1'; i < '6'; ++i) {
+            ser.write(i);
+            vla::write(ser, "SYNC012\r\n");
+            PORTB = 0x20;
+            _delay_ms(500);
+            PORTB = 0x00;
+            _delay_ms(500);
+        }
+        vla::write(ser, "\r\n");
+        _delay_ms(1000);
+    }
+}
+
+static void write_sync_at_speed(br_t br)
+{
+    switch (br) {
+    case br_t::BR_9600: {
+        vla::serial_9600 ser;
+        write_sync_at_speed_inner(ser);
+        break;
+    }
+    case br_t::BR_19200: {
+        vla::serial_19200 ser;
+        write_sync_at_speed_inner(ser);
+        break;
+    }
     }
 }
 
