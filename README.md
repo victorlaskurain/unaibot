@@ -21,6 +21,63 @@ This file is expected  to be useful as a guide to  the code for anyone
 willing to understand  how the whole setup works and  how to customize
 it.
 
+## How to build ##
+
+The  recommended  way To  build  the  project  is  to create  a  build
+directory right  under the root of  the project and execute  make with
+the `-f` parameter.
+
+```
+mkdir build
+cd build
+make -f ../makefile
+```
+
+### About the build system ###
+
+The  top  level  makefile  is a  non-recursive  makefile.   Using  the
+utilities  provided by  the  top level  makefile  defining modules  is
+straightforward.  A  module can  be  either  a  static library  or  an
+executable:
+
+Defining a module requires three steps:
+
+1. Create a directory for the module, for example `registers`.
+2. Put  the source files  in the directory. It  is advised to  put the
+   header files in a a subdirectory lik `registers/include`.
+3. Add   the   module.mk   module  definition   file,  in   this  case
+   `registers/module.mk`.
+
+All the  module definition files  are pretty much alike.  For example,
+this is the module definition for the `registers` module:
+
+```make
+local_src  := $(wildcard $(src_subdirectory)/*.cpp)
+$(eval $(call make-library, $(subdirectory)/libshift_register.a, $(local_src)))
+```
+
+The first line stores  the list of all the source  files of the module
+in  a  variable. `src_subdirectory`  is  a  handy make  function  that
+returns the source directory.
+
+The second line adds the  library `libshift_register.a` to the list of
+libraries to  build.  Make  will use  the source  files listed  in the
+variable `local_src`  to build the library.  `subdirectory` is similar
+to `src_subdirectory` but  returns the build directory  instead of the
+source directory.
+
+The module  definition file for  an executable is very  similar. Let's
+take for example the module definition of `robot_main`:
+
+```make
+local_src  := $(wildcard $(src_subdirectory)/*.cpp)
+$(eval $(call make-program, $(subdirectory)/program, $(local_src), command/libcommand.a motor_driver/libmotor_driver.a pwm/libpwm.a shift_register/libshift_register.a serial/libserial.a))
+```
+
+As  you  can  see  the  only  noticeable  different  is  the  call  to
+`make-program` instead  of `make-library` and the  fact that libraries
+on which the program depends must be specified as third parameter.
+
 ## High level overview ##
 
 The hardware setup is as follows:
@@ -40,7 +97,7 @@ following way:
 - A  Raspberry Pi sends commands  setting motor speeds to  the arduino
   using the serial port and serves  the web that implements the remote
   control.  It  gets remote  commands  through  a websocket.  It  also
-  streams the webcams video through a second websocket.
+  streams the webcam's video through a second websocket.
 - The smartphone loads the remote control interface from the Raspberry
   pi, processes user  input and  sends commands  to the  Raspberry via
   websockets. It also renders the video stream if available.
@@ -119,7 +176,7 @@ The basic operations are:
 - `inline void write(const uint8_t byte)`: write one byte.
 
 There are also versions to read and write whole buffers which could be
-more  efficient than  plain old  loop.  There  is also  a set  of free
+more efficient  than a plain  old loop.  There is  also a set  of free
 function  templates which  are  the primary  public  interface to  the
 serial port classes:
 
@@ -166,24 +223,437 @@ parameters represents a policy:
 
 ## Type safe and efficient register access ##
 
+The atmega328p  presents all the  control registers and all  the input
+and  output registers  mapped in  the memory  space. The  AVR avr/io.h
+defines symbolic names for all  the registers as memory addresses. For
+example, io.h defines the B io port  (PORTB) as 25h.  In turn the same
+file defines each of this port's  bits as plain integers: PORTB0 is 0,
+PORTB1 is 1, etc. This is not type safe, nothing prevents accidentally
+mixing register PORTB with bit PORTC3, for example.
+
+registers.hpp  defines  different  types  to  represent  each  of  the
+registers uses the template class pin\_t to define different types for
+each of the pins and tie  them to their respective register types. The
+pin\_t template class defines a set  of functions to set and clear the
+bits it represents in a safe way.
+
+This is the interface of pin_t:
+
+```c++
+template <typename param_port_t, int pin_number>
+struct pin_t
+{
+    typedef param_port_t port_t;
+    inline static int offset();
+    inline static void set();
+    inline static void clear();
+    inline static void set_mode_input();
+    inline static void set_mode_output();
+};
+```
+
+Using registers.hpp clearing the bit number 2 of PORTB turns from:
+
+```
+PORB &= ~_BV(PORTB2)
+```
+
+into the safer and more expressive:
+
+```
+PORTB2_t::clear();
+```
+
+The first  version is error  prone because if  we forget say  "~", the
+compiler  won't complain  at  all  but the  result  won't  be the  one
+expected. In other words, writing incorrect  code is very easy and the
+compiler won't  help us.  With the  second option  the intent  is more
+clear an writing wrong code is harder.
+
+Moreover, the  implementation of  registers.hpp achieves this  with no
+computational   cost.  Compiling   with  optimiseations   enabled  the
+following two functions produce exactly the same assembler code:
+
+```c++
+uint8_t f1()
+{
+    PORTB |= _BV(PORTB0);
+    PORTB &= ~_BV(PORTB0);
+    return -1;
+}
+
+uint8_t f2()
+{
+    PORTB0_t::set();
+    PORTB0_t::clear();
+    return -1;
+}
+```
+
 ## Shift register driver ##
+
+The  shift_register module  implements a  driver for  the the  74HC595
+shift register integrated circuit. The API is a single template class:
+
+```c++
+template<typename shift_clk,
+         typename store_clk,
+         typename output_enable,
+         typename ds,
+         typename bit_field_t,
+         size_t bit_field_size = 8 * sizeof(bit_field_t)>
+struct shift_register
+{
+public:
+    shift_register();
+    ~shift_register();
+    bit_field_t data;
+    inline void commit(bit_field_t d)
+    inline void commit() const
+private:
+    shift_register(const shift_register&)                  = delete;
+    shift_register(shift_register&&)                       = delete;
+    shift_register& operator=(const shift_register &other) = delete;
+    shift_register& operator=(shift_register &&other)      = delete;
+};
+
+```
+
+These are the template's parameters:
+
+- shift\_clk: the  shift clock pin. A raising edge  in this pin shifts
+  the existing bits of the shift register and stores a new bit.
+
+- store\_clk:  the store clock pin.  A raising edge in  this ping puts
+  the value of the value of the shift register into the store register
+  (the parallel output).
+
+- output_enable: if this pin is high then the output pins will assume
+  the high impedance - OFF state.
+
+- ds: the  rising edge of the  shift_clk takes the new  value from the
+  value present at this pin.
+
+- bit\_field\_t: the  data type used to represent in  memory the value
+  of  the shift  register. Any  type should  be usable  as long  as it
+  supports the binary and (&) and  shift bits left (<<) operations. In
+  practice integer uint8_t has ever been used.
+
+- bit\_field\_size: the number of  bits in bit\_field\_t. It takes the
+  right value depending  on the size of bit\_field\_t, no  need to set
+  it manually.
+
+shift\_register expects the  pins to be represented  using an instance
+of the  pin\_t described in the  previous section so an  example usage
+would be the following:
+
+```c++
+#include <vla/shift_register.hpp>
+#include <stdint.h>
+
+using namespace vla;
+
+int main(void) {
+    // define de type and an instance
+    shift_register<PORTD4_t/* arduino pin  4 */,
+                   PORTB4_t/* arduino pin 12 */,
+                   PORTD7_t/* arduino pin  7 */,
+                   PORTB0_t/* arduino pin  8 */,
+                   uint8_t> r;
+    r.data = 0x81; // clear shift register
+    r.commit();    // transfer the value to the parallel outuput
+    while(true);   // shift register should show 0x81
+}
+
+```
 
 ## Command processor ##
 
+The command processor  module provides a simple  framework to dispatch
+command to handler  functions. In this context the  commands are plain
+strings and the handlers have the following signature:
+
+```c++
+uint8_t operator()(const char* str)
+```
+
+The dispatcher calls each handler in order and until one of them
+returns 0.
+
+There is  no provision  to add handlers  dynamically, instead  all the
+handlers   must    be   added   at    the   same   time    using   the
+```make_command_dispatcher```  which  takes  any  number  of  callable
+objects (functors, plain functions, ...) and returns a dispatcher:
+
+```c++
+template<typename ...Ts>
+command_dispatcher<Ts...> make_command_dispatcher(const Ts&... args)
+```
+
 ## PWD driver ##
+
+### Quickstart ###
+
+To  use  one of  the  4  PWD pins  supported  instantiate  one of  the
+available classes:
+
+-   ```pcpwm_portd6```,   ```pcpwm_portd5```,  ```pcpwm_portb3```   or
+  ```pcpwm_portd3```.
+
+For example:
+
+```c++
+// instantiate and configure timer
+vla::timer0_pcpwm timer0;
+timer0.set_clock(vla::clock_source::PRESCALE_1);
+// set up PWM on pin d6
+vla::pcpwm_portd6 pwm0a(timer0);
+// set 50% duty cycle
+pwm0a.set_level(UINT8_MAX / 2);
+```
+
+The implementation relays  on two templates.  In the  first place, the
+```timer_configuration```  template  class   packs  together  the  two
+registers used  to configure any  of the  two supported 8  bit timers.
+For  example   the  ```timer0_pcpwm```  instantiation  helps   in  the
+configuration of the 0 timer by binding together the two timer control
+registers (```TCCR0A_t``` and ```TCCR0B_t```)  and the timer mode.  It
+also  provides  a method  (```set_clock```)  to  change the  prescaler
+(frequency) programmatically.
+
+In  the second  place,  the  ```pwm``` template  class  binds a  timer
+configuration  together with  the comparator  register and  the output
+pin. This  class takes the  timer type  as template parameter  and the
+timer instance  as constructor parameter.  The later's function  is to
+ensure  that  the  user  doesn't  try to  use  a  PWM  output  without
+configuring the timer first.
 
 ## Motor driver ##
 
+This   module   is  an   driver   implementation   for  the   Adafruit
+Motor/Stepper/Servo  Shield  for  Arduino.  The  shield  supports  two
+stepper motors  or four DC  motors. This  driver supports only  the DC
+motor configuration.
+
+The shield uses a shift register  to set the turning direction of each
+of the  four motors. The  implementation relays on the  shift register
+module to  handle the shift  register and the  PWM module to  set each
+motors power level.
+
+The API is pretty straighforward:
+
+```c++
+class motor_driver
+{
+public:
+    motor_driver();
+    ~motor_driver();
+public:
+    motor0_t motor0;
+    motor1_t motor1;
+    motor2_t motor2;
+    motor3_t motor3;
+};
+```
+
+Once  instantiated  each of  the  four  motors  is available  via  the
+corresponding  member  variable. The  type  of  each of  these  member
+variables is an instantiation of  a class template. The class template
+provides the  following public  member functions, which  hopefully are
+self explanatory.
+
+```c++
+enum class direction_t : uint8_t
+{
+    IDLE      = 0x00,
+    FORWARD   = 0x01,
+    BACKWARD  = 0x02,
+    STOP      = 0x11,
+    FIRST     = IDLE,
+    LAST      = STOP
+};
+
+void set_direction(direction_t d);
+void set_speed(uint8_t s);
+```
+
 ## Main program ##
+
+The main program simply reads commands  from the serial port using the
+serial port driver, parses them using the command dispatcher and sends
+the corresponding lower  level commands to the motor  shield using the
+motor driver.
+
+```c++
+int main()
+{
+    const auto CMD_BUFFER_SIZE = 64;
+    uint8_t cmd_buffer[CMD_BUFFER_SIZE], err_code;
+    serial_9600 ser;
+    motor_driver motors;
+    auto dispatch = make_command_dispatcher(set_speeds_cmd(motors));
+    write_line(ser, "READY");
+    while(true) {
+        read_line(ser, cmd_buffer, CMD_BUFFER_SIZE, '\r');
+        err_code = dispatch(reinterpret_cast<const char*>(&cmd_buffer[0]));
+        if (SUCCESS == err_code) {
+            write_line(ser, "OK");
+        } else {
+            write(ser, "ERROR ");
+            write_line(ser, hex(err_code));
+        }
+    }
+}
+```
 
 # Web based remote control #
 
+The  web based  remote control  is  in the  web_control directory.   A
+description  of  the  most  significant  contents  of  this  directory
+follows:
+
+- `bootstrap.sh`:   shell   script   to   install  all   the  required
+  dependencies.
+
+- `install.sh`:  shell script  to install the  remote controller  as a
+  systemd service.  Copies  unaibot_web.js file and the  html, lib and
+  node_modules  directories  into   `/opt/unaibot`  and  configures  a
+  systemd service to run the the server.
+
+- `lib/unaibot.js`:   it's  a   node   module.  Exports   the  UnaiBot
+  constructor which takes as parameters the serial port and optionally
+  its  configuration.  Instances of  this  object  provide high  level
+  interface  for serial  port communication  between the  main program
+  running  on the  Arduino  and the  world, in  this  case the  remote
+  controller.
+
+- `lib/botcam.js`: it's a node  module. Exports the BotCam constructor
+  which takes as  paramenter the name of a video  device. Instances of
+  this object provide the means  to start/stop the capture process and
+  signal   the  activation/deactivation   of   the   camera  and   the
+  availability of new captured frames.
+
+- `unaibot_web.js`:  this is  the main program,  serves the  HTML page
+  that  implements   the  remote's   GUI,  handles  the   server  side
+  implementation of the remote's  commands and manages the websocket's
+  server side.
+
 ## User interface ##
+
+The user interface  is a multitouch web page which  shows two vertical
+walls, one at each border.  The left war controls the left caterpillar
+while the right  bar controls the right one. Pressing  on the top half
+of the  bar lets  the caterpillar  run forward  while pressing  on the
+bottom half lets it run backward. The round button at the center allow
+activating and deactivating the camera.
+
+A  couple  of Javascript  files  implement  touch event  handling  and
+client/server communication.
+
+- `api.js`: implementation of the client side of the protocol.
+
+- `main.js`:  touch  event and  video  activation/deactivation   event
+  handling.
 
 ## Remote API ##
 
+At page  load the browsers opens  a connection to the  command socket.
+Automatically reconnects if the connection breaks for any reason.
+
+Two  types of  messages travel  through the  command socket.  The most
+common are the requests and their  responses. The server can also send
+asynchronous events to the browser.
+
+There is a  second WebSocket endpoint handled by the  same node server
+to stream the webcams video.
+
 ### Simple query / response protocol ###
+
+The client  sends the request  and receives responses as  JSON encoded
+Javascript objects.
+
+The requests have the following properties:
+
+- id: identifies  each request and must be unique  during the lifetime
+  of a connection.
+
+- type: identifies  the type of the message which  the server uses for
+  message dispatching.
+
+- data: if  the  messages requires  any  more  information  it can  be
+  encoded in this property. The type field dictates the interpretation
+  of this property.
+
+The responses have the following properties:
+
+- id: identifies each response, the value is equal to the value of the
+  id field of the request to which this response answers.
+
+- data:  the response data. The  type of the requests  dictates how to
+  interpret this field and whether it is present at all.
 
 ### Asynchronous events ###
 
+Asynchronous events  originate at  the server. The  server is  free to
+send events  to the client  at any time.  The events are  JSON encoded
+Javascript objects with the following properties:
+
+- evt: a string with the event name. The client library triggers a DOM
+  event to communicate the event to any interested listeners.
+
 ## Webcam streaming ##
+
+[Jsmpeg](https://github.com/phoboslab/jsmpeg) provides  the Javascript
+library to  render MPEG1 into a  canvas element. It also  provides the
+necessary framework for  transmitting the vide frames  from the server
+to the  client live using  websockets as transport. Although  it might
+not be the most efficient codec the whole setup is very simple.
+
+Client side, this three lines of Javascript direct the video player to
+connect to the the given  websocket address start playback. The player
+just sits there waiting for any video frames to render.
+
+```javascript
+var canvas = document.getElementById('video-canvas');
+var url = 'ws://'+document.location.hostname+':8080/unaibot/cam';
+var player = new JSMpeg.Player(url, {canvas: canvas});
+```
+
+Server side three different pieces of code work together to stream the
+video.
+
+On the first place the streaming process uses ffmpeg to initialize the
+video  device,  capture raw  frames  and  encode  then in  the  format
+required by Jsmpeg.
+
+On the  second place there  is of course there  is the handler  of the
+`/unaibot/cam` websocket endpoint.  Its  work is accepting connections
+and broadcasting the video stream to all connected clients.
+
+On the third place, the `botcam.js` module provides a simple interface
+to the video capture device tailored to the needs of Jsmpeg. It how to
+run ffmpeg encoder with the appropriate parameters. The module exports
+a constructor (BotCam) whose instances have two public methods:
+
+- capture(bool): activates the video  capture (true) or deactivates it
+  (false).
+
+- isVideoOn: returns true is the video capture is active.
+
+and emit three events:
+
+- videoOff:  notifies that the video  capture is off.  If  the library
+  emits this event before the videoOn  event, then that means that the
+  capture could not initialized for  whatever reason (no access to the
+  device,  wrong ffmpeg  configuration or  any other  reason). If  the
+  library emits this event after  a call to `capture(false)` it simply
+  means that the capture shutdown process worked. The library can emit
+  this event  at any other time,  which usually means that  the webcam
+  got disconnected or for some reason the ffmpeg command died.
+
+- videoOn: notifies that the video capture is on.
+
+- data: when the video capture is  on the video data is made available
+  to any interested listeners using  by emitting this event. The event
+  object is  in the format required  by Jsmpeg so that  the web socket
+  just needs to forward it to the remote clients.
