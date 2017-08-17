@@ -13,13 +13,12 @@ MKDIR      = mkdir -p
 MV         = mv -f
 RM         = rm -f
 SED        = sed
-STL        = /home/victor/PROIEKTUAK/arduino/libraries/avr-stl/include
 TEST       = test
 OBJCOPY    = avr-objcopy
 BIN_FORMAT = ihex
 
 # compiler flags
-CXXFLAGS  += -Wall -g -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11 -I$(STL)
+CXXFLAGS  += -Wall -g -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
 
 # programmer configuration
 AVRDUDE    = avrdude -F -V
