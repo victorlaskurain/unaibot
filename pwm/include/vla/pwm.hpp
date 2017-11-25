@@ -18,8 +18,17 @@ namespace vla {
         EXTERNAL_CLOCK_T0_RISING
     };
 
+/*
+  :TODO:
+  Timer eta output compare unit konfigurazioak nahastuta daude. Alde
+  batetik WGM Waveform Generation Mode bitak kudeatu beharko lirateke
+  eta beste batetik COM Compare Output Mode bitak. Izan ere, 328p-an
+  bi COM unitate daude timer bakoitzeko.
+*/
+
     enum class timer_mode : uint8_t {
-        PHASE_CORRECT_PWM = _BV(COM0A1) | _BV(COM0B1) | _BV(WGM00)
+        PHASE_CORRECT_PWM = _BV(COM0A1) | _BV(COM0B1) | _BV(WGM00),
+        TOGGLE_ON_COMPARE = _BV(COM0A0) | _BV(COM0B0) | _BV(WGM01)
     };
 
     template<typename timer_register_a_t,
