@@ -22,10 +22,8 @@ CXXFLAGS  += -Wall -g -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
 
 # programmer configuration
 AVRDUDE    = avrdude -F -V
-BAUD       = 19200
-PART       = m328p
-PORT       = /dev/ttyACM0
-PROTOCOL   = arduino
+DEVICE     = device_not_specified
+include $(SOURCE_DIR)/device_conf/$(DEVICE).conf
 
 # verbosity control
 Q          =
@@ -60,7 +58,7 @@ define make-program
   .PHONY: $(subst /,_,$1)_upload
   $(subst /,_,$1)_upload: $1.hex
 	@echo upload
-	$(AVRDUDE) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
+	$(AVRDUDE) -b $(BAUD) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
 endef
 
 source-to-object = $(patsubst $(SOURCE_DIR)/%,%,$(subst .cpp,.o,$(filter %.cpp,$1)))
