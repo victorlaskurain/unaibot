@@ -41,5 +41,5 @@ struct set_speeds_cmd
 
 int main()
 {
-    motor_main<set_speeds_cmd>();
+    return motor_main<set_speeds_cmd>();
 }

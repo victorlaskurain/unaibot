@@ -111,6 +111,7 @@ int motor_main()
             write_line(ser, hex(err_code));
         }
     }
+    return 0;
 }
 
 }
