@@ -134,7 +134,9 @@ namespace vla {
             return TCCR0A;
         }
     };
+    typedef pin_t<TCCR0A_t, COM0A0> COM0A0_t;
     typedef pin_t<TCCR0A_t, COM0A1> COM0A1_t;
+    typedef pin_t<TCCR0A_t, COM0B0> COM0B0_t;
     typedef pin_t<TCCR0A_t, COM0B1> COM0B1_t;
     typedef pin_t<TCCR0A_t, WGM00> WGM00_t;
 
@@ -162,6 +164,22 @@ namespace vla {
         }
     };
 
+    struct TCCR1A_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR1A;
+        }
+    };
+
+    struct TCCR1B_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCCR1B;
+        }
+    };
+
     struct TCCR2A_t
     {
         inline static volatile uint8_t& ref()
@@ -169,9 +187,9 @@ namespace vla {
             return TCCR2A;
         }
     };
-    typedef pin_t<TCCR2A_t, COM0A1> COM2A1_t;
-    typedef pin_t<TCCR2A_t, COM0B1> COM2B1_t;
-    typedef pin_t<TCCR2A_t, WGM00> WGM20_t;
+    typedef pin_t<TCCR2A_t, COM2A1> COM2A1_t;
+    typedef pin_t<TCCR2A_t, COM2B1> COM2B1_t;
+    typedef pin_t<TCCR2A_t, WGM20> WGM20_t;
 
     struct TCCR2B_t
     {
@@ -194,6 +212,63 @@ namespace vla {
         inline static volatile uint8_t& ref()
         {
             return OCR2B;
+        }
+    };
+
+    struct TIMSK0_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TIMSK0;
+        }
+    };
+    typedef pin_t<TIMSK0_t, OCIE0A> OCIE0A_t;
+    typedef pin_t<TIMSK0_t, OCIE0B> OCIE0B_t;
+    typedef pin_t<TIMSK0_t, TOIE0>  TOIE0_t;
+
+    struct TIMSK1_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TIMSK1;
+        }
+    };
+    typedef pin_t<TIMSK1_t, OCIE1A> OCIE1A_t;
+    typedef pin_t<TIMSK1_t, OCIE1B> OCIE1B_t;
+    typedef pin_t<TIMSK1_t, TOIE1>  TOIE1_t;
+
+    struct TIMSK2_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TIMSK2;
+        }
+    };
+    typedef pin_t<TIMSK2_t, OCIE2A> OCIE2A_t;
+    typedef pin_t<TIMSK2_t, OCIE2B> OCIE2B_t;
+    typedef pin_t<TIMSK2_t, TOIE2>  TOIE2_t;
+
+    struct TCNT0_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCNT0;
+        }
+    };
+
+    struct TCNT1_t
+    {
+        inline static volatile uint16_t& ref()
+        {
+            return TCNT1;
+        }
+    };
+
+    struct TCNT2_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return TCNT2;
         }
     };
 
