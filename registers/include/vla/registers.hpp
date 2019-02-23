@@ -5,26 +5,32 @@
 
 namespace vla {
 
-    template <typename param_port_t, int pin_number>
-    struct pin_t
+    template <typename param_register_t, int bit_number>
+    struct bit_t
     {
-        typedef param_port_t port_t;
+        typedef param_register_t register_t;
         inline static int offset()
         {
-            return pin_number;
+            return bit_number;
         }
         inline static bool get()
         {
-            return _BV(pin_number);
+            return _BV(bit_number);
         }
         inline static void set()
         {
-            port_t::ref() |= _BV(pin_number);
+            register_t::ref() |= _BV(bit_number);
         }
         inline static void clear()
         {
-            port_t::ref() &= ~_BV(pin_number);
+            register_t::ref() &= ~_BV(bit_number);
         }
+    };
+
+    template <typename param_port_t, int pin_number>
+    struct pin_t : public bit_t<param_port_t, pin_number>
+    {
+        typedef param_port_t port_t;
         inline static void set_mode_input()
         {
             pin_t<typename port_t::ddr_t, pin_number>::clear();
@@ -83,14 +89,14 @@ namespace vla {
             return DDRC;
         }
     };
-    typedef pin_t<DDRC_t, 0> DDRC0_t;
-    typedef pin_t<DDRC_t, 1> DDRC1_t;
-    typedef pin_t<DDRC_t, 2> DDRC2_t;
-    typedef pin_t<DDRC_t, 3> DDRC3_t;
-    typedef pin_t<DDRC_t, 4> DDRC4_t;
-    typedef pin_t<DDRC_t, 5> DDRC5_t;
-    typedef pin_t<DDRC_t, 6> DDRC6_t;
-    typedef pin_t<DDRC_t, 7> DDRC7_t;
+    typedef bit_t<DDRC_t, 0> DDRC0_t;
+    typedef bit_t<DDRC_t, 1> DDRC1_t;
+    typedef bit_t<DDRC_t, 2> DDRC2_t;
+    typedef bit_t<DDRC_t, 3> DDRC3_t;
+    typedef bit_t<DDRC_t, 4> DDRC4_t;
+    typedef bit_t<DDRC_t, 5> DDRC5_t;
+    typedef bit_t<DDRC_t, 6> DDRC6_t;
+    typedef bit_t<DDRC_t, 7> DDRC7_t;
     struct PORTC_t
     {
         typedef DDRC_t ddr_t;
@@ -151,11 +157,11 @@ namespace vla {
             return TCCR0A;
         }
     };
-    typedef pin_t<TCCR0A_t, COM0A0> COM0A0_t;
-    typedef pin_t<TCCR0A_t, COM0A1> COM0A1_t;
-    typedef pin_t<TCCR0A_t, COM0B0> COM0B0_t;
-    typedef pin_t<TCCR0A_t, COM0B1> COM0B1_t;
-    typedef pin_t<TCCR0A_t, WGM00> WGM00_t;
+    typedef bit_t<TCCR0A_t, COM0A0> COM0A0_t;
+    typedef bit_t<TCCR0A_t, COM0A1> COM0A1_t;
+    typedef bit_t<TCCR0A_t, COM0B0> COM0B0_t;
+    typedef bit_t<TCCR0A_t, COM0B1> COM0B1_t;
+    typedef bit_t<TCCR0A_t, WGM00> WGM00_t;
 
     struct TCCR0B_t
     {
@@ -204,9 +210,9 @@ namespace vla {
             return TCCR2A;
         }
     };
-    typedef pin_t<TCCR2A_t, COM2A1> COM2A1_t;
-    typedef pin_t<TCCR2A_t, COM2B1> COM2B1_t;
-    typedef pin_t<TCCR2A_t, WGM20> WGM20_t;
+    typedef bit_t<TCCR2A_t, COM2A1> COM2A1_t;
+    typedef bit_t<TCCR2A_t, COM2B1> COM2B1_t;
+    typedef bit_t<TCCR2A_t, WGM20> WGM20_t;
 
     struct TCCR2B_t
     {
@@ -239,9 +245,9 @@ namespace vla {
             return TIMSK0;
         }
     };
-    typedef pin_t<TIMSK0_t, OCIE0A> OCIE0A_t;
-    typedef pin_t<TIMSK0_t, OCIE0B> OCIE0B_t;
-    typedef pin_t<TIMSK0_t, TOIE0>  TOIE0_t;
+    typedef bit_t<TIMSK0_t, OCIE0A> OCIE0A_t;
+    typedef bit_t<TIMSK0_t, OCIE0B> OCIE0B_t;
+    typedef bit_t<TIMSK0_t, TOIE0>  TOIE0_t;
 
     struct TIMSK1_t
     {
@@ -250,9 +256,9 @@ namespace vla {
             return TIMSK1;
         }
     };
-    typedef pin_t<TIMSK1_t, OCIE1A> OCIE1A_t;
-    typedef pin_t<TIMSK1_t, OCIE1B> OCIE1B_t;
-    typedef pin_t<TIMSK1_t, TOIE1>  TOIE1_t;
+    typedef bit_t<TIMSK1_t, OCIE1A> OCIE1A_t;
+    typedef bit_t<TIMSK1_t, OCIE1B> OCIE1B_t;
+    typedef bit_t<TIMSK1_t, TOIE1>  TOIE1_t;
 
     struct TIMSK2_t
     {
@@ -261,9 +267,9 @@ namespace vla {
             return TIMSK2;
         }
     };
-    typedef pin_t<TIMSK2_t, OCIE2A> OCIE2A_t;
-    typedef pin_t<TIMSK2_t, OCIE2B> OCIE2B_t;
-    typedef pin_t<TIMSK2_t, TOIE2>  TOIE2_t;
+    typedef bit_t<TIMSK2_t, OCIE2A> OCIE2A_t;
+    typedef bit_t<TIMSK2_t, OCIE2B> OCIE2B_t;
+    typedef bit_t<TIMSK2_t, TOIE2>  TOIE2_t;
 
     struct TCNT0_t
     {
@@ -297,7 +303,7 @@ namespace vla {
             return ADMUX;
         }
         template<typename pin_t>
-        inline static void set_channel(pin_t = pin_t{})
+        inline static void select_channel(pin_t = pin_t{})
         {
             static_assert(is_analog_pin<pin_t>::value, "Trying analog read on digital pin");
             ADMUX = (ADMUX & ~0x03) | static_cast<uint8_t>(pin_t::offset());
@@ -308,7 +314,7 @@ namespace vla {
         }
         inline static void set_ref(ADMUX_REF_t ref)
         {
-            ADMUX = ~(0xc0 & ADMUX) | (static_cast<uint8_t>(ref)<<6);
+            ADMUX = (ADMUX & ~0xc0) | (static_cast<uint8_t>(ref)<<6);
         }
     };
 
@@ -319,8 +325,8 @@ namespace vla {
             return ADCSRA;
         }
     };
-    typedef pin_t<ADCSRA_t, ADEN> ADEN_t;
-    typedef pin_t<ADCSRA_t, ADSC> ADSC_t;
+    typedef bit_t<ADCSRA_t, ADEN> ADEN_t;
+    typedef bit_t<ADCSRA_t, ADSC> ADSC_t;
 
 }
 
