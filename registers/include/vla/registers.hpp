@@ -13,6 +13,10 @@ namespace vla {
         {
             return pin_number;
         }
+        inline static bool get()
+        {
+            return _BV(pin_number);
+        }
         inline static void set()
         {
             port_t::ref() |= _BV(pin_number);
@@ -29,6 +33,15 @@ namespace vla {
         {
             pin_t<typename port_t::ddr_t, pin_number>::set();
         }
+    };
+
+    template<class port_t>
+    struct is_analog_port {
+        const static bool value = false;
+    };
+    template<class pin_t>
+    struct is_analog_pin {
+        const static bool value = is_analog_port<typename pin_t::port_t>::value;
     };
 
     struct DDRB_t
@@ -94,6 +107,10 @@ namespace vla {
     typedef pin_t<PORTC_t, 5> PORTC5_t;
     typedef pin_t<PORTC_t, 6> PORTC6_t;
     typedef pin_t<PORTC_t, 7> PORTC7_t;
+    template<>
+    struct is_analog_port<PORTC_t> {
+        const static bool value = true;
+    };
 
     struct DDRD_t
     {
@@ -271,6 +288,39 @@ namespace vla {
             return TCNT2;
         }
     };
+
+    enum class ADMUX_REF_t:uint8_t {AREF = 0, AVCC = 1, INTERNAL_1_1 = 3};
+    struct ADMUX_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return ADMUX;
+        }
+        template<typename pin_t>
+        inline static void set_channel(pin_t = pin_t{})
+        {
+            static_assert(is_analog_pin<pin_t>::value, "Trying analog read on digital pin");
+            ADMUX = (ADMUX & ~0x03) | static_cast<uint8_t>(pin_t::offset());
+        }
+        inline static ADMUX_REF_t get_ref()
+        {
+            return ADMUX_REF_t((ADMUX & 0xc0) >> 6);
+        }
+        inline static void set_ref(ADMUX_REF_t ref)
+        {
+            ADMUX = ~(0xc0 & ADMUX) | (static_cast<uint8_t>(ref)<<6);
+        }
+    };
+
+    struct ADCSRA_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return ADCSRA;
+        }
+    };
+    typedef pin_t<ADCSRA_t, ADEN> ADEN_t;
+    typedef pin_t<ADCSRA_t, ADSC> ADSC_t;
 
 }
 
