@@ -306,7 +306,7 @@ namespace vla {
         inline static void select_channel(pin_t = pin_t{})
         {
             static_assert(is_analog_pin<pin_t>::value, "Trying analog read on digital pin");
-            ADMUX = (ADMUX & ~0x03) | static_cast<uint8_t>(pin_t::offset());
+            ADMUX = (ADMUX & ~0x07) | static_cast<uint8_t>(pin_t::offset());
         }
         inline static ADMUX_REF_t get_ref()
         {
@@ -317,6 +317,7 @@ namespace vla {
             ADMUX = (ADMUX & ~0xc0) | (static_cast<uint8_t>(ref)<<6);
         }
     };
+    typedef bit_t<ADMUX_t, ADLAR> ADLAR_t;
 
     struct ADCSRA_t
     {
@@ -327,6 +328,9 @@ namespace vla {
     };
     typedef bit_t<ADCSRA_t, ADEN> ADEN_t;
     typedef bit_t<ADCSRA_t, ADSC> ADSC_t;
+    typedef bit_t<ADCSRA_t, ADPS0> ADPS0_t;
+    typedef bit_t<ADCSRA_t, ADPS1> ADPS1_t;
+    typedef bit_t<ADCSRA_t, ADPS2> ADPS2_t;
 
     struct DIDR0_t {
         inline static volatile uint8_t& ref()
