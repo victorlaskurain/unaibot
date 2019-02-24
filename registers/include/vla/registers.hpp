@@ -328,6 +328,22 @@ namespace vla {
     typedef bit_t<ADCSRA_t, ADEN> ADEN_t;
     typedef bit_t<ADCSRA_t, ADSC> ADSC_t;
 
+    struct DIDR0_t {
+        inline static volatile uint8_t& ref()
+        {
+            return DIDR0;
+        }
+    };
+
+    struct PRR_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return PRR;
+        }
+    };
+    typedef bit_t<PRR_t, PRADC> PRADC_t;
+
 }
 
 #endif // VLA_REGISTERS_REGISTERS_HPP
