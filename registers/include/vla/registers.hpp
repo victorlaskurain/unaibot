@@ -9,13 +9,13 @@ namespace vla {
     struct bit_t
     {
         typedef param_register_t register_t;
-        inline static int offset()
+        constexpr inline static int offset()
         {
             return bit_number;
         }
         inline static bool get()
         {
-            return _BV(bit_number);
+            return register_t::ref() & _BV(bit_number);
         }
         inline static void set()
         {
