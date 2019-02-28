@@ -332,6 +332,7 @@ namespace vla {
                    serial_sync_write> serial_38400_sync_write_only;
 
     serial_9600& get_serial_debug();
+    serial_9600_async& get_serial_async_debug();
 }
 
 #endif // VLA_SERIAL_SERIAL_HPP
