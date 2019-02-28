@@ -6,6 +6,13 @@
 #include <vla/protothreads.hpp>
 using namespace vla;
 
+/**
+ * Read chars from the serial port and in one thread and output them
+ * on hex format also in the serial port. Implemented using two
+ * protothreads, one for reading and one for writing which communicate
+ * through a thread safe message queue.
+ */
+
 using message_t = uint8_t;
 using queue_t = msg_queue<message_t, 5>;
 
@@ -52,16 +59,25 @@ void write_message(message_t m)
  * executions of each thread. Which is better depends on the
  * application.
  */
-void producer(pt *pt, queue_t &q, message_t &msg) {
-	pt_begin(pt);
-	for (;;) {
-        pt_wait(pt, msg = message_read());
-		pt_wait(pt, !q.full());
-        q.push(msg);
-        // pt_yield(pt); // see comment on producer
-	}
-	pt_end(pt);
-}
+class producer_t {
+    pt ctx;
+    queue_t &q;
+    // msg is a member variable so that it is possible to store the
+    // state of the thread from invocation to invocation
+    message_t msg{};
+public:
+    producer_t(queue_t &q):ctx(), q(q){}
+    void operator()() {
+        pt_begin(&ctx);
+        for (;;) {
+            pt_wait(&ctx, msg = message_read());
+            pt_wait(&ctx, !q.full());
+            q.push(msg);
+            // pt_yield(&ctx); // see comment on producer
+        }
+        pt_end(&ctx);
+    }
+};
 
 /**
  * Read messages from the queue. If there are no pending messages
@@ -81,14 +97,13 @@ void consumer(pt *pt, queue_t &q) {
 int main(int argc, char **argv)
 {
     write_line(ser, "BEGIN");
-    pt pt_producer = pt_init();
-    pt pt_consumer = pt_init();
     auto queue = queue_t{};
-    message_t msg;
+    auto producer = producer_t{queue};
+    pt pt_consumer = pt_init();
     while (true) {
         write_line(ser, "GO");
         for (int i = 0; i < 1024; ++i) {
-            producer(&pt_producer, queue, msg);
+            producer();
             consumer(&pt_consumer, queue);
         }
         write_line(ser, "WAIT 5s");
