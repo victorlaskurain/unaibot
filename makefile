@@ -1,5 +1,5 @@
-# source dir. Build dir expected to be a subdirectory of root
-SOURCE_DIR = ..
+# source dir.
+SOURCE_DIR := $(realpath $(dir $(realpath $(firstword $(MAKEFILE_LIST)))))
 
 # device settings
 F_CPU      = 16000000UL
