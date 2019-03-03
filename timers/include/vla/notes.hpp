@@ -1,16 +1,16 @@
-#ifndef VLA_SIGNAL_HPP
-#define VLA_SIGNAL_HPP
+#ifndef VLA_NOTES_HPP
+#define VLA_NOTES_HPP
 
 #include <vla/timers.hpp>
 
 namespace vla {
 
     void find_closest_tc0(double target_freq,
-                          clock_source_2 &best_cs,
+                          clock_source_0 &best_cs,
                           uint8_t &best_ocr);
 
     void find_closest_tc1(double target_freq,
-                          clock_source_2 &best_cs,
+                          clock_source_1 &best_cs,
                           uint16_t &best_ocr);
 
     void find_closest_tc2(double target_freq,
