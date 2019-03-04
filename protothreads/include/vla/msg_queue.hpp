@@ -1,8 +1,9 @@
 #ifndef VLA_MSG_QUEUE_MSG_QUEUE_HPP
 #define VLA_MSG_QUEUE_MSG_QUEUE_HPP
 
+#include <vla/cli_sei.hpp>
+
 #include <stddef.h>
-#include <util/atomic.h>
 
 namespace vla {
 
@@ -67,18 +68,6 @@ namespace vla {
         }
     };
 
-    struct CliSei {
-        uint8_t sreg_restore;
-        CliSei()
-        {
-            sreg_restore = SREG;
-            cli();
-        }
-        ~CliSei()
-        {
-            SREG = sreg_restore;
-        }
-    };
     template<typename ValueType, size_t size>
     using msg_queue = basic_msg_queue<ValueType, size, CliSei>;
     template<typename ValueType, size_t size>

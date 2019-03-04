@@ -2,6 +2,7 @@
 #define VLA_TIMERS_HPP
 
 #include <vla/registers.hpp>
+#include <avr/interrupt.h>
 
 namespace vla {
     enum class clock_source_0
@@ -37,7 +38,7 @@ namespace vla {
     };
 
     enum class tc_mode : uint8_t {
-        NONE                    = 0,
+        NORMAL                  = 0,
         PHASE_CORRECT_PWM       = _BV(WGM00),
         TOGGLE_ON_COMPARE_MATCH = _BV(WGM01)
     };
@@ -77,6 +78,7 @@ namespace vla {
     class timer_counter
     {
     public:
+        const static tc_id id = tid;
         using ctrl_reg_a   = typename timer_counter_traits<tid>::ctrl_reg_a;
         using ctrl_reg_b   = typename timer_counter_traits<tid>::ctrl_reg_b;
         using int_mask_reg = typename timer_counter_traits<tid>::int_mask_reg;
@@ -85,7 +87,7 @@ namespace vla {
         using cnt_reg_t    = typename timer_counter_traits<tid>::cnt_reg_t;
 
         inline timer_counter(
-            tc_mode mode         = tc_mode::NONE,
+            tc_mode mode         = tc_mode::NORMAL,
             clock_source clk_src = clock_source::STOP)
         {
             set_mode(mode);
@@ -93,7 +95,7 @@ namespace vla {
         }
         ~timer_counter()
         {
-            set_mode(tc_mode::NONE);
+            set_mode(tc_mode::NORMAL);
             set_clock(clock_source::STOP);
         }
         timer_counter(const timer_counter&&)           = delete;
@@ -110,7 +112,7 @@ namespace vla {
                 pin_t<ctrl_reg_a, 0>::clear();
                 pin_t<ctrl_reg_a, 1>::set();
                 break;
-            case tc_mode::NONE:
+            case tc_mode::NORMAL:
             default:
                 pin_t<ctrl_reg_a, 0>::clear();
                 pin_t<ctrl_reg_a, 1>::clear();
@@ -134,7 +136,6 @@ namespace vla {
         SET_ON_COMPARE_MATCH
     };
 
-    using cm_handler_t = void(*)(void);
     template<tc_id tcid, cm_id cmid>
     struct cm_unit_traits
     {
@@ -168,7 +169,6 @@ namespace vla {
         using oc_reg = OCR2A_t;
         static const int bit0 = 6;
         static const int bit1 = 7;
-        static cm_handler_t cm_handler;
     };
 
     template<>
@@ -182,16 +182,22 @@ namespace vla {
         static const int bit1 = 5;
     };
 
+    using cm_handler_t = void(*)(void*);
+
     template<tc_id tcid, cm_id cmid>
     class cm_unit
     {
+    public:
         using cm_traits    = cm_unit_traits<tcid, cmid>;
         using timer_traits = timer_counter_traits<tcid>;
         using clock_source = typename timer_traits::clock_source;
         using ctrl_reg     = typename cm_traits::ctrl_reg_a;
         using oc_reg       = typename cm_traits::oc_reg;
         using oc_reg_t     = typename timer_traits::cnt_reg_t;
+        using timer_t      = timer_counter<tcid>;
+    private:
         timer_counter<tcid> &timer;
+        void set_cm_handler_ptr(cm_handler_t f, void* data);
     public:
         inline cm_unit(
             timer_counter<tcid> &t,
@@ -204,14 +210,14 @@ namespace vla {
         {
             set_mode(cm_mode::DISCONNECTED);
         }
-        inline void set_cm_handler(cm_handler_t f)
+        inline void set_cm_handler(cm_handler_t f, void* data = nullptr)
         {
             if (f) {
-                cm_traits::cm_handler = f;
+                set_cm_handler_ptr(f, data);
                 cm_traits::int_enable_bit::set();
             } else {
                 cm_traits::int_enable_bit::clear();
-                cm_traits::cm_handler = nullptr;
+                set_cm_handler_ptr(nullptr, nullptr);
             }
         }
         inline void set_mode(cm_mode mode)
@@ -232,6 +238,15 @@ namespace vla {
             return oc_reg::ref();
         }
     };
+
+    using cm_unit_0A = cm_unit<tc_id::TC0, cm_id::A>;
+    using cm_unit_0B = cm_unit<tc_id::TC0, cm_id::B>;
+    // :TODO: add traits for the following two devices
+    // using cm_unit_1A = cm_unit<tc_id::TC1, cm_id::A>;
+    // using cm_unit_1B = cm_unit<tc_id::TC1, cm_id::B>;
+    using cm_unit_2A = cm_unit<tc_id::TC2, cm_id::A>;
+    using cm_unit_2B = cm_unit<tc_id::TC2, cm_id::B>;
+
 }
 
 #endif
