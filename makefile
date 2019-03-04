@@ -26,7 +26,7 @@ DEVICE     = device_not_specified
 include $(SOURCE_DIR)/device_conf/$(DEVICE).conf
 
 # verbosity control
-Q          =
+Q          = $(if $(VERBOSE),,@)
 # prevent running from source directory
 $(if $(filter $(notdir $(SOURCE_DIR)),$(notdir $(CURDIR))),\
   $(error Please run the makefile from the binary tree.))
@@ -37,8 +37,8 @@ define make-library
   libraries += $1
   sources   += $2
   $1: $(call source-to-object,$2)
-	@echo $$@
-	$Q$(AR) $(ARFLAGS) $$@ $$^
+	@echo Build library $$@
+	$Q$(AR) $(ARFLAGS) $$@ $$^ >/dev/null
 endef
 
 # Function to create programs.
@@ -117,21 +117,21 @@ endif
 
 # rule to create dependency files
 %.d: %.cpp
-	@echo $@
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TARGET_ARCH) -M $< | $(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,' > $@.tmp
-	@$(MV) $@.tmp $@
+	@echo Compute dependencies of $(subst $(SOURCE_DIR)/,,$<)
+	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TARGET_ARCH) -M $< | $(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,' > $@.tmp
+	$Q$(MV) $@.tmp $@
 
 # rule to compile c++ files to object files
 %.o: %.cpp
-	@echo $@
+	@echo Compile $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 # rule to generate assembly files for analysis
 %.s: %.cpp
-	@echo $@
+	@echo Create assembly file for $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -S -o $@ $<
 
 # rule to generate the hex file (ready to upload) from the elf binary
 %.hex: %.elf
-	@echo $@
+	@echo $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
