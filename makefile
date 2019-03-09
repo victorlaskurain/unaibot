@@ -37,7 +37,7 @@ define make-library
   sources   += $2
   $(call source-to-object,$2): $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
   $(addprefix $(BUILD_DIR)/,$1): $(call source-to-object,$2)
-	@echo Build library $$@
+	$$(info Build library $$@)
 	$Q$(AR) $(ARFLAGS) $$@ $$^ >/dev/null
 endef
 
@@ -53,11 +53,11 @@ define make-program
   sources   += $2
   $(addprefix $(BUILD_DIR)/,$1.hex): $(addprefix $(BUILD_DIR)/,$1.elf)
   $(addprefix $(BUILD_DIR)/,$1.elf): $(call source-to-object,$2) $(addprefix $(BUILD_DIR)/,$3)
-	@echo Build program $$@
+	$$(info Build program $$@)
 	$Q$(CXX) $(CXXFLAGS) -o $$@ $$^
   .PHONY: $(subst /,_,$1)_upload
   $(subst /,_,$1)_upload: $(addprefix $(BUILD_DIR)/,$1.hex)
-	@echo upload
+	$$(info upload)
 	$(AVRDUDE) -b $(BAUD) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
 endef
 
@@ -120,28 +120,29 @@ endif
 
 # rule to create dependency files
 $(BUILD_DIR)/%.d: $(SOURCE_DIR)/%.cpp
-	@echo Compute dependencies of $(subst $(SOURCE_DIR)/,,$<)
+	$(info Compute dependencies of $(subst $(SOURCE_DIR)/,,$<))
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TARGET_ARCH) -M $< | $(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,' > $@.tmp
 	$Q$(MV) $@.tmp $@
 
 # rule to compile c++ files to object files
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(SOURCE_DIR)/makefile
-	@echo Compile $(subst $(SOURCE_DIR)/,,$<)
+	$(info Compile $(subst $(SOURCE_DIR)/,,$<))
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 # rule to generate assembly files for analysis
 %.s: %.cpp
-	@echo Create assembly file for $(subst $(SOURCE_DIR)/,,$<)
+	$(info Create assembly file for $(subst $(SOURCE_DIR)/,,$<))
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -S -o $@ $<
 
 # rule to generate the hex file (ready to upload) from the elf binary
 %.hex: %.elf
-	@echo $(subst $(SOURCE_DIR)/,,$<)
+	$(info Generate hex file $@)
 	$Q$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
 
 # show usage
+.PHONY: help
 help:
-	@echo "Usage:"
-	@echo "make BUILD_DIR=<build dir> DEVICE=<device>"
-	@echo "  - BUILD_DIR: where to put the generated files. Default build."
-	@echo "  - DEVICE: device configuration. Choose one of [$(basename $(notdir $(wildcard $(SOURCE_DIR)/device_conf/*)))]. Default uno."
+	$(info Usage:)
+	$(info make BUILD_DIR=<build dir> DEVICE=<device>)
+	$(info   - BUILD_DIR: where to put the generated files. Default build.)
+	$(info   - DEVICE: device configuration. Choose one of [$(basename $(notdir $(wildcard $(SOURCE_DIR)/device_conf/*)))]. Default uno.)
