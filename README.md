@@ -23,15 +23,16 @@ it.
 
 ## How to build ##
 
-The  recommended  way To  build  the  project  is  to create  a  build
-directory right  under the root of  the project and execute  make with
-the `-f` parameter.
+The recommended  way to build  the project is  to execute make  in the
+directory where the makefile is located.
 
 ```
-mkdir build
-cd build
-make -f ../makefile
+make
 ```
+
+This will create  a build directory alongside the  makefile which will
+contain all the built files, both  the final binaries and the temporal
+artifacts.
 
 ### About the build system ###
 

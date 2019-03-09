@@ -1,5 +1,7 @@
 # source dir.
 SOURCE_DIR := $(realpath $(dir $(realpath $(firstword $(MAKEFILE_LIST)))))
+BUILD_DIR  := $(if $(BUILD_DIR),$(BUILD_DIR),$(SOURCE_DIR)/build)
+make-build-dir := $(shell mkdir -p $(BUILD_DIR))
 
 # device settings
 F_CPU      = 16000000UL
@@ -27,16 +29,13 @@ include $(SOURCE_DIR)/device_conf/$(DEVICE).conf
 
 # verbosity control
 Q          = $(if $(VERBOSE),,@)
-# prevent running from source directory
-$(if $(filter $(notdir $(SOURCE_DIR)),$(notdir $(CURDIR))),\
-  $(error Please run the makefile from the binary tree.))
 
 # Function to create static libraries
 # $(call make-library, library-name, source-file-list)
 define make-library
-  libraries += $1
+  libraries += $(addprefix $(BUILD_DIR)/,$1)
   sources   += $2
-  $1: $(call source-to-object,$2)
+  $(addprefix $(BUILD_DIR)/,$1): $(call source-to-object,$2)
 	@echo Build library $$@
 	$Q$(AR) $(ARFLAGS) $$@ $$^ >/dev/null
 endef
@@ -49,20 +48,20 @@ endef
 #
 # $(call make-program, program-name, source-file-list, library-list)
 define make-program
-  programs  += $1.hex
+  programs  += $(addprefix $(BUILD_DIR)/,$1.hex)
   sources   += $2
-  $1.hex: $1.elf
-  $1.elf: $(call source-to-object,$2) $3
-	@echo $$@
+  $(addprefix $(BUILD_DIR)/,$1.hex): $(addprefix $(BUILD_DIR)/,$1.elf)
+  $(addprefix $(BUILD_DIR)/,$1.elf): $(call source-to-object,$2) $(addprefix $(BUILD_DIR)/,$3)
+	@echo Build program $$@
 	$Q$(CXX) $(CXXFLAGS) -o $$@ $$^
   .PHONY: $(subst /,_,$1)_upload
-  $(subst /,_,$1)_upload: $1.hex
+  $(subst /,_,$1)_upload: $(addprefix $(BUILD_DIR)/,$1.hex)
 	@echo upload
 	$(AVRDUDE) -b $(BAUD) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
 endef
 
-source-to-object = $(patsubst $(SOURCE_DIR)/%,%,$(subst .cpp,.o,$(filter %.cpp,$1)))
-source-to-deps   = $(patsubst $(SOURCE_DIR)/%,%,$(subst .cpp,.d,$(filter %.cpp,$1)))
+source-to-object = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(subst .cpp,.o,$(filter %.cpp,$1)))
+source-to-deps   = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(subst .cpp,.d,$(filter %.cpp,$1)))
 
 subdirectory = $(patsubst $(SOURCE_DIR)/%/module.mk,%,  \
                  $(word                               \
@@ -93,6 +92,7 @@ vpath %.cpp $(SOURCE_DIR)
 create-output-directories :=										\
         $(shell for f in $(modules);								\
                 do													\
+                  f=$(BUILD_DIR)/$$f;                               \
                   $(TEST) -d $$f         || $(MKDIR) $$f;			\
                   $(TEST) -d $$f/include || $(MKDIR) $$f/include;   \
                 done)
@@ -116,13 +116,13 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 # rule to create dependency files
-%.d: %.cpp
+$(BUILD_DIR)/%.d: $(SOURCE_DIR)/%.cpp
 	@echo Compute dependencies of $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TARGET_ARCH) -M $< | $(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,' > $@.tmp
 	$Q$(MV) $@.tmp $@
 
 # rule to compile c++ files to object files
-%.o: %.cpp
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	@echo Compile $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
