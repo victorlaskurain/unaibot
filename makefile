@@ -35,6 +35,7 @@ Q          = $(if $(VERBOSE),,@)
 define make-library
   libraries += $(addprefix $(BUILD_DIR)/,$1)
   sources   += $2
+  $(call source-to-object,$2): $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
   $(addprefix $(BUILD_DIR)/,$1): $(call source-to-object,$2)
 	@echo Build library $$@
 	$Q$(AR) $(ARFLAGS) $$@ $$^ >/dev/null
@@ -124,7 +125,7 @@ $(BUILD_DIR)/%.d: $(SOURCE_DIR)/%.cpp
 	$Q$(MV) $@.tmp $@
 
 # rule to compile c++ files to object files
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(SOURCE_DIR)/makefile
 	@echo Compile $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
