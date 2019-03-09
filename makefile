@@ -24,7 +24,7 @@ CXXFLAGS  += -Wall -g -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
 
 # programmer configuration
 AVRDUDE    = avrdude -F -V
-DEVICE     = device_not_specified
+DEVICE     := $(if $(DEVICE),$(DEVICE),uno)
 include $(SOURCE_DIR)/device_conf/$(DEVICE).conf
 
 # verbosity control
@@ -111,7 +111,9 @@ libraries: $(libraries)
 clean:
 	$(RM) $(objects) $(programs) $(libraries) $(dependencies) $(extra_clean)
 
-ifneq "$(MAKECMDGOALS)" "clean"
+ifeq "$(MAKECMDGOALS)" "clean"
+else ifeq "$(MAKECMDGOALS)" "help"
+else
   -include $(dependencies)
 endif
 
@@ -135,3 +137,10 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 %.hex: %.elf
 	@echo $(subst $(SOURCE_DIR)/,,$<)
 	$Q$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
+
+# show usage
+help:
+	@echo "Usage:"
+	@echo "make BUILD_DIR=<build dir> DEVICE=<device>"
+	@echo "  - BUILD_DIR: where to put the generated files. Default build."
+	@echo "  - DEVICE: device configuration. Choose one of [$(basename $(notdir $(wildcard $(SOURCE_DIR)/device_conf/*)))]. Default uno."
