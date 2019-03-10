@@ -32,7 +32,7 @@ Q          = $(if $(VERBOSE),,@)
 
 # Function to create static libraries
 # $(call make-library, library-name, source-file-list)
-define make-library
+define make-library-rule
   libraries += $(addprefix $(BUILD_DIR)/,$1)
   sources   += $2
   $(call source-to-object,$2): $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
@@ -40,6 +40,8 @@ define make-library
 	$$(info Build library $$@)
 	$Q$(AR) $(ARFLAGS) $$@ $$^ >/dev/null
 endef
+make-library = $(eval $(call make-library-rule,$1,$2,$3))
+
 
 # Function to create programs.
 #
@@ -48,7 +50,7 @@ endef
 # serial_test_program_upload.
 #
 # $(call make-program, program-name, source-file-list, library-list)
-define make-program
+define make-program-rule
   programs  += $(addprefix $(BUILD_DIR)/,$1.hex)
   sources   += $2
   $(addprefix $(BUILD_DIR)/,$1.hex): $(addprefix $(BUILD_DIR)/,$1.elf)
@@ -60,6 +62,7 @@ define make-program
 	$$(info upload)
 	$(AVRDUDE) -b $(BAUD) -c $(PROTOCOL) -p $(PART) -P $(PORT) -U flash:w:$$<
 endef
+make-program = $(eval $(call make-program-rule,$1,$2,$3))
 
 source-to-object = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(subst .cpp,.o,$(filter %.cpp,$1)))
 source-to-deps   = $(patsubst $(SOURCE_DIR)/%,$(BUILD_DIR)/%,$(subst .cpp,.d,$(filter %.cpp,$1)))

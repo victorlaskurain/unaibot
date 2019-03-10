@@ -54,7 +54,7 @@ this is the module definition for the `registers` module:
 
 ```make
 local_src  := $(wildcard $(src_subdirectory)/*.cpp)
-$(eval $(call make-library, $(subdirectory)/libshift_register.a, $(local_src)))
+$(call make-library, $(subdirectory)/libshift_register.a, $(local_src))
 ```
 
 The first line stores  the list of all the source  files of the module
@@ -72,7 +72,7 @@ take for example the module definition of `robot_main`:
 
 ```make
 local_src  := $(wildcard $(src_subdirectory)/*.cpp)
-$(eval $(call make-program, $(subdirectory)/program, $(local_src), command/libcommand.a motor_driver/libmotor_driver.a pwm/libpwm.a shift_register/libshift_register.a serial/libserial.a))
+$(call make-program, $(subdirectory)/program, $(local_src), command/libcommand.a motor_driver/libmotor_driver.a pwm/libpwm.a shift_register/libshift_register.a serial/libserial.a)
 ```
 
 As  you  can  see  the  only  noticeable  different  is  the  call  to
