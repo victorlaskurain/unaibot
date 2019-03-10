@@ -51,8 +51,9 @@ make-library = $(eval $(call make-library-rule,$1,$2,$3))
 #
 # $(call make-program, program-name, source-file-list, library-list)
 define make-program-rule
-  programs  += $(addprefix $(BUILD_DIR)/,$1.hex)
-  sources   += $2
+  programs      += $(addprefix $(BUILD_DIR)/,$1.hex)
+  sources       += $2
+  other_targets += $(subst /,_,$1)_upload
   $(addprefix $(BUILD_DIR)/,$1.hex): $(addprefix $(BUILD_DIR)/,$1.elf)
   $(addprefix $(BUILD_DIR)/,$1.elf): $(call source-to-object,$2) $(addprefix $(BUILD_DIR)/,$3)
 	$$(info Build program $$@)
@@ -76,11 +77,12 @@ src_subdirectory = $(patsubst %/module.mk,%,  \
 
 # Collect information from each module in these four variables.
 # Initialize them here as simple variables.
-modules      := $(patsubst $(SOURCE_DIR)/%/module.mk,%,$(shell find $(SOURCE_DIR) -name module.mk))
-programs     :=
-sources      :=
-libraries    :=
-sources      :=
+modules       := $(patsubst $(SOURCE_DIR)/%/module.mk,%,$(shell find $(SOURCE_DIR) -name module.mk))
+programs      :=
+sources       :=
+libraries     :=
+sources       :=
+other_targets :=
 
 objects      = $(call source-to-object,$(sources))
 dependencies = $(call source-to-deps,$(sources))
@@ -143,9 +145,20 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(SOURCE_DIR)/makefile
 	$Q$(OBJCOPY) -O $(BIN_FORMAT) -R .eeprom $< $@
 
 # show usage
+define n
+
+
+endef
+blank :=
+s := $(blank) $(blank)
 .PHONY: help
 help:
 	$(info Usage:)
 	$(info make BUILD_DIR=<build dir> DEVICE=<device>)
-	$(info   - BUILD_DIR: where to put the generated files. Default build.)
-	$(info   - DEVICE: device configuration. Choose one of [$(basename $(notdir $(wildcard $(SOURCE_DIR)/device_conf/*)))]. Default uno.)
+	$(info $s$s- BUILD_DIR: where to put the generated files. Default build.)
+	$(info $s$s- DEVICE: device configuration. Choose one of [$(basename $(notdir $(wildcard $(SOURCE_DIR)/device_conf/*)))]. Default uno.)
+	$(info Source dir: $n$s$s- $(SOURCE_DIR))
+	$(info Build dir: $n$s$s- $(BUILD_DIR))
+	$(info Library targets:    $(patsubst $(BUILD_DIR)/%,$n  - $$BUILD_DIR/%,$(sort $(libraries))))
+	$(info Executable targets: $(patsubst $(BUILD_DIR)/%,$n  - $$BUILD_DIR/%,$(sort $(programs))))
+	$(info Other targets: $(patsubst %,$n  - %,$(sort $(other_targets))))
