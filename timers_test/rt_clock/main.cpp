@@ -13,18 +13,21 @@ void on_alarm(const void* msg)
     write_line(ser, static_cast<const char*>(msg));
 }
 
-static const auto after_10_seconds = period_us{10UL*1000UL*1000UL};
-static const auto after_8_seconds  = period_us{ 8UL*1000UL*1000UL};
+static const auto after_10_seconds   = period_us{10UL*1000UL*1000UL};
+static const auto after_8_seconds    = period_us{ 8UL*1000UL*1000UL};
+static const auto after_750_useconds = period_us{             750UL};
 
 int main(int argc, char **argv)
 {
     sei();
-    write_line(ser, "BEGIN");
-    PORTB5_t::set_mode_output();
     tick_0a_20khz tick;
     auto clock = rt_clock{tick};
-    PORTB5_t::clear();
     const size_t no_cancel = 5;
+    write_line(ser, "BEGIN 750us");
+    _delay_ms(10);
+    clock.set_alarm(after_750_useconds, on_alarm, "750us");
+    _delay_ms(10);
+    write_line(ser, "BEGIN");
     static_assert(no_cancel < MAX_ALARMS, "Alarm in the middle");
     write_line(ser, "SET AFTER 10\"");
     clock.set_alarm(after_10_seconds, on_alarm, "10\"");
