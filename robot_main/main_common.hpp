@@ -97,7 +97,7 @@ int motor_main()
 {
     const auto CMD_BUFFER_SIZE = 64;
     uint8_t cmd_buffer[CMD_BUFFER_SIZE], err_code;
-    serial_9600 ser;
+    serial_sync ser;
     motor_driver motors;
     auto dispatch = make_command_dispatcher(set_speeds_cmd(motors));
     write_line(ser, "READY");

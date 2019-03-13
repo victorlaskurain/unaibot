@@ -11,40 +11,19 @@ namespace vla {
 
     const int SERIAL_ASYNC_BUFFER_SIZE_DEFAULT = 16;
 
-    struct serial_speed_9600
+    /**
+     * According to ATmega328/P DATASHEET COMPLETE 24.4.1
+     */
+    constexpr uint16_t calculate_ubrr(uint32_t baud)
     {
-        serial_speed_9600()
-        {
-#define BAUD 9600
-#include <util/setbaud.h>
-        UBRR0H = UBRRH_VALUE;
-        UBRR0L = UBRRL_VALUE;
-#undef BAUD
-        }
-    };
+        return F_CPU / baud / 16 - 1;
+    }
 
-    struct serial_speed_19200
+    enum class serial_speed : uint16_t
     {
-        serial_speed_19200()
-        {
-#define BAUD 19200
-#include <util/setbaud.h>
-        UBRR0H = UBRRH_VALUE;
-        UBRR0L = UBRRL_VALUE;
-#undef BAUD
-        }
-    };
-
-    struct serial_speed_38400
-    {
-        serial_speed_38400()
-        {
-#define BAUD 38400
-#include <util/setbaud.h>
-        UBRR0H = UBRRH_VALUE;
-        UBRR0L = UBRRL_VALUE;
-#undef BAUD
-        }
+        BAUD_9600  = calculate_ubrr(9600),
+        BAUD_19200 = calculate_ubrr(19200),
+        BAUD_38400 = calculate_ubrr(38400)
     };
 
     typedef void (*read_cb_t)(void*, uint8_t);
@@ -212,19 +191,60 @@ namespace vla {
         }
     };
 
-    template<typename SerialSpeed, typename SerialReadMode, typename SerialWriteMode>
+    enum class serial_mode : uint8_t {
+        ASYNC      = (0x0<<UMSEL00),
+        SYNC       = (0x1<<UMSEL00),
+        MASTER_SPI = (0x3<<UMSEL00)
+    };
+    enum class serial_char_size : uint8_t {
+        FIVE  = (0x0<<UCSZ00),
+        SIX   = (0x1<<UCSZ00),
+        SEVEN = (0x2<<UCSZ00),
+        EIGHT = (0x3<<UCSZ00),
+        NINE  = (0x7<<UCSZ00)
+    };
+    enum class serial_parity : uint8_t {
+        NONE = (0x0<<UPM00),
+        EVEN = (0x2<<UPM00),
+        ODD  = (0x3<<UPM00)
+    };
+    enum class serial_stop_bits : uint8_t {
+        ONE = (0x0<<USBS0),
+        TWO = (0x1<<USBS0)
+    };
+    constexpr uint8_t calculate_serial_config(
+        serial_parity parity, serial_stop_bits stop_bits,
+        serial_char_size char_size, serial_mode mode)
+    {
+        return static_cast<uint8_t>(mode)
+            |  static_cast<uint8_t>(char_size)
+            |  static_cast<uint8_t>(parity)
+            |  static_cast<uint8_t>(stop_bits);
+    }
+
+    template<typename SerialReadMode, typename SerialWriteMode>
     class serial : public SerialReadMode, public SerialWriteMode
     {
-    private:
-        SerialSpeed  speed;
     public:
-        inline serial()
+        inline serial(
+            serial_speed     speed     = serial_speed::BAUD_9600,
+            serial_parity    parity    = serial_parity::NONE,
+            serial_stop_bits stop_bits = serial_stop_bits::ONE,
+            serial_char_size char_size = serial_char_size::EIGHT,
+            serial_mode      mode      = serial_mode::ASYNC)
         {
-            UCSR0C = (3<<UCSZ00);
+            set_config(parity, stop_bits, char_size, mode);
+            set_speed(speed);
         }
-        inline ~serial()
+        inline void set_speed(serial_speed speed)
         {
-            UCSR0C &= ~(3<<UCSZ00);
+            UBRR0  = static_cast<uint16_t>(speed);
+        }
+        inline void set_config(
+            serial_parity    parity   , serial_stop_bits stop_bits,
+            serial_char_size char_size, serial_mode       mode)
+        {
+            UCSR0C = calculate_serial_config(parity, stop_bits, char_size, mode);
         }
     private:
         serial(const serial&)                  = delete;
@@ -301,38 +321,12 @@ namespace vla {
         read_line(ser, buffer, sizeof buffer, '\r');
     }
 
-    typedef serial<serial_speed_9600,
-                   serial_sync_read,
-                   serial_sync_write> serial_9600;
-    typedef serial<serial_speed_9600,
-                   serial_async_read,
-                   serial_async_write> serial_9600_async;
-    typedef serial<serial_speed_9600,
-                   not_available,
-                   serial_sync_write> serial_9600_sync_write_only;
+    using serial_sync            = serial<serial_sync_read , serial_sync_write>;
+    using serial_async           = serial<serial_async_read, serial_async_write>;
+    using serial_sync_write_only = serial<not_available    , serial_sync_write>;
 
-    typedef serial<serial_speed_19200,
-                   serial_sync_read,
-                   serial_sync_write> serial_19200;
-    typedef serial<serial_speed_19200,
-                   serial_async_read,
-                   serial_async_write> serial_19200_async;
-    typedef serial<serial_speed_19200,
-                   not_available,
-                   serial_sync_write> serial_19200_sync_write_only;
-
-    typedef serial<serial_speed_38400,
-                   serial_sync_read,
-                   serial_sync_write> serial_38400;
-    typedef serial<serial_speed_38400,
-                   serial_async_read,
-                   serial_async_write> serial_38400_async;
-    typedef serial<serial_speed_38400,
-                   not_available,
-                   serial_sync_write> serial_38400_sync_write_only;
-
-    serial_9600& get_serial_debug();
-    serial_9600_async& get_serial_async_debug();
+    serial_sync& get_serial_debug();
+    serial_async& get_serial_async_debug();
 }
 
 #endif // VLA_SERIAL_SERIAL_HPP
