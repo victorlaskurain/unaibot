@@ -59,23 +59,22 @@ void write_message(message_t m)
  * executions of each thread. Which is better depends on the
  * application.
  */
-class producer_t {
-    pt ctx;
+class producer_t: public ptxx_thread {
     queue_t &q;
     // msg is a member variable so that it is possible to store the
     // state of the thread from invocation to invocation
     message_t msg{};
 public:
-    producer_t(queue_t &q):ctx(), q(q){}
+    producer_t(queue_t &q):q(q){}
     void operator()() {
-        pt_begin(&ctx);
+        ptxx_begin();
         for (;;) {
-            pt_wait(&ctx, msg = message_read());
-            pt_wait(&ctx, !q.full());
+            ptxx_wait(msg = message_read());
+            ptxx_wait(!q.full());
             q.push(msg);
-            // pt_yield(&ctx); // see comment on producer
+            pt_yield(&ctx); // see comment on producer
         }
-        pt_end(&ctx);
+        ptxx_end();
     }
 };
 

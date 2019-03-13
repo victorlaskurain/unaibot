@@ -17,7 +17,19 @@
 #    undef pt_queue_pop
 #endif
 
+#define ptxx_begin()    pt_begin(&ctx)
+#define ptxx_end()      pt_end(&ctx)
+#define ptxx_wait(cond) pt_wait(&ctx, cond)
+#define ptxx_yield()    pt_yield(&ctx)
+#define ptxx_exit(stat) pt_exit(&ctx, stat)
+#define ptxx_loop(cond) pt_loop(&ctx, cond)
+
 namespace vla {
+    class ptxx_thread
+    {
+    protected:
+        pt ctx{};
+    };
 }
 
 #endif // VLA_PROTOTHREADS_PROTOTHREADS_HPP
