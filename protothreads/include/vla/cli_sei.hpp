@@ -4,7 +4,19 @@
 #include <util/atomic.h>
 
 namespace vla {
-    struct CliSei {
+    struct Cli
+    {
+        Cli()
+        {
+            cli();
+        }
+        ~Cli()
+        {
+            sei();
+        }
+    };
+    struct CliSei
+    {
         uint8_t sreg_restore;
         CliSei()
         {
@@ -17,5 +29,11 @@ namespace vla {
         }
     };
 
+    struct NopLock
+    {
+        // leaving this out produces a variable defined but not used
+        // warning in msg_queue_t::push
+        NopLock() = default;
+    };
 }
 #endif

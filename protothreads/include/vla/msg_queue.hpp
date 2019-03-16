@@ -7,24 +7,67 @@
 
 namespace vla {
 
-    template<typename ValueType, size_t size, typename Lock>
+    // template sorcery to determine the smallest unsigned integer
+    // type needed to hold a given value.
+    template<bool cond, typename then_t, typename else_t>
+    struct if_then_else{};
+    template<typename then_t, typename else_t>
+    struct if_then_else<true, then_t, else_t>
+    {
+        using type = then_t;
+    };
+    template<typename then_t, typename else_t>
+    struct if_then_else<false, then_t, else_t>
+    {
+        using type = else_t;
+    };
+    template<size_t size>
+    struct min_type_for
+    {
+        using type =
+            typename if_then_else<size <= UINT8_MAX,
+                uint8_t,
+                typename if_then_else<size <= UINT16_MAX,
+                    uint16_t,
+                    typename if_then_else<size <= UINT32_MAX,
+                       uint32_t,
+                       uint64_t>::type>::type>::type;
+    };
+
+    template<typename ValueType, size_t size,
+             // if reads (or writes) are guarantied to be executed in
+             // a safe context (for example in an interruption
+             // handler), then the corresponding lock can be a nop.
+             typename _ReadLock,
+             typename _WriteLock = _ReadLock>
     class basic_msg_queue
     {
+        static_assert(size > 0, "basic_msg_queue size must be > 0");
+        using index_t = typename min_type_for<size>::type;
         ValueType buffer[size];
-        unsigned int read  = 0;
-        unsigned int write = 0;
+        index_t read  = 0;
+        index_t write = 0;
+        bool is_empty = true;
+    protected:
+        using ReadLock  = _ReadLock;
+        using WriteLock = _WriteLock;
         bool _empty()
         {
-            return write == read;
+            return is_empty;
         }
         bool _full()
         {
-            return (write + 1) % size == read;
+            return !is_empty && size == read;
+        }
+        void _read_ptr_next()
+        {
+            read = (read + 1) % size;
+            is_empty = read == write;
         }
         ValueType _pop()
         {
             auto read_old = read;
-            read = (read + 1) % size;
+            _read_ptr_next();
             return buffer[read_old];
         }
         bool _push(const ValueType &v)
@@ -34,27 +77,32 @@ namespace vla {
             }
             buffer[write] = v;
             write = (write + 1) % size;
+            is_empty = false;
             return true;
+        }
+        ValueType& _peek()
+        {
+            return buffer[read];
         }
     public:
         bool empty()
         {
-            Lock lock;
+            ReadLock lock;
             return _empty();
         }
         bool full()
         {
-            Lock lock;
+            WriteLock lock;
             return _full();
         }
         ValueType pop()
         {
-            Lock lock;
+            ReadLock lock;
             return _pop();
         }
         bool pop(ValueType &v)
         {
-            Lock lock;
+            ReadLock lock;
             if (_empty()) {
                 return false;
             }
@@ -63,7 +111,7 @@ namespace vla {
         }
         bool push(const ValueType &v)
         {
-            Lock lock;
+            WriteLock lock;
             return _push(v);
         }
     };
@@ -71,7 +119,7 @@ namespace vla {
     template<typename ValueType, size_t size>
     using msg_queue = basic_msg_queue<ValueType, size, CliSei>;
     template<typename ValueType, size_t size>
-    using msg_queue_fast = basic_msg_queue<ValueType, size, int>;
+    using msg_queue_fast = basic_msg_queue<ValueType, size, NopLock>;
 
 }
 
