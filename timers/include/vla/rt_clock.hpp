@@ -10,6 +10,10 @@ namespace vla {
     {
         uint32_t us;
         constexpr explicit period_us(uint32_t us):us(us){}
+        period_us operator-(period_us other) const
+        {
+            return period_us{us - other.us};
+        }
     };
 
     /**
