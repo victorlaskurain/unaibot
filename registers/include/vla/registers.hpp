@@ -5,6 +5,14 @@
 
 namespace vla {
 
+    /**
+     * A bit in some register is a boolean value.
+     *
+     * It is defined by its "register address" (the param_register_t)
+     * and its bit number inside this register.
+     *
+     * It has three operations: get, set (write 1) and clear (write 0).
+     */
     template <typename param_register_t, int bit_number>
     struct bit_t
     {
@@ -27,6 +35,21 @@ namespace vla {
         }
     };
 
+    /**
+     * A pin is just a bit with some extra features and also requirements.
+     *
+     * The register address must have an associated data direction
+     * register defined as the ddr_t type.
+     *
+     * The register address must have an associated input
+     * register. The get operation reads the value of the pin from
+     * this register. This value is only meaningful if the pin is
+     * configured for input.
+     *
+     * When used as input all the general digital I/O pins have an
+     * internal pull up resistor. It is disabled by default, can be
+     * activated calling switch_on_pull_up.
+     */
     template <typename param_port_t, int pin_number>
     struct pin_t : public bit_t<param_port_t, pin_number>
     {
@@ -38,6 +61,18 @@ namespace vla {
         inline static void set_mode_output()
         {
             pin_t<typename port_t::ddr_t, pin_number>::set();
+        }
+        inline static bool get()
+        {
+            return param_port_t::pin_t::ref() & _BV(pin_number);
+        }
+        inline static void switch_on_pull_up()
+        {
+            pin_t::set();
+        }
+        inline static void switch_off_pull_up()
+        {
+            pin_t::clear();
         }
     };
 
@@ -65,9 +100,25 @@ namespace vla {
     typedef pin_t<DDRB_t, 5> DDRB5_t;
     typedef pin_t<DDRB_t, 6> DDRB6_t;
     typedef pin_t<DDRB_t, 7> DDRB7_t;
+    struct PINB_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return PINB;
+        }
+    };
+    typedef bit_t<PINB_t, 0> PINB0_t;
+    typedef bit_t<PINB_t, 1> PINB1_t;
+    typedef bit_t<PINB_t, 2> PINB2_t;
+    typedef bit_t<PINB_t, 3> PINB3_t;
+    typedef bit_t<PINB_t, 4> PINB4_t;
+    typedef bit_t<PINB_t, 5> PINB5_t;
+    typedef bit_t<PINB_t, 6> PINB6_t;
+    typedef bit_t<PINB_t, 7> PINB7_t;
     struct PORTB_t
     {
         typedef DDRB_t ddr_t;
+        typedef PINB_t pin_t;
         inline static volatile uint8_t& ref()
         {
             return PORTB;
@@ -97,9 +148,25 @@ namespace vla {
     typedef bit_t<DDRC_t, 5> DDRC5_t;
     typedef bit_t<DDRC_t, 6> DDRC6_t;
     typedef bit_t<DDRC_t, 7> DDRC7_t;
+    struct PINC_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return PINC;
+        }
+    };
+    typedef bit_t<PINC_t, 0> PINC0_t;
+    typedef bit_t<PINC_t, 1> PINC1_t;
+    typedef bit_t<PINC_t, 2> PINC2_t;
+    typedef bit_t<PINC_t, 3> PINC3_t;
+    typedef bit_t<PINC_t, 4> PINC4_t;
+    typedef bit_t<PINC_t, 5> PINC5_t;
+    typedef bit_t<PINC_t, 6> PINC6_t;
+    typedef bit_t<PINC_t, 7> PINC7_t;
     struct PORTC_t
     {
         typedef DDRC_t ddr_t;
+        typedef PINC_t pin_t;
         inline static volatile uint8_t& ref()
         {
             return PORTC;
@@ -133,9 +200,25 @@ namespace vla {
     typedef pin_t<DDRD_t, 5> DDRD5_t;
     typedef pin_t<DDRD_t, 6> DDRD6_t;
     typedef pin_t<DDRD_t, 7> DDRD7_t;
+    struct PIND_t
+    {
+        inline static volatile uint8_t& ref()
+        {
+            return PIND;
+        }
+    };
+    typedef bit_t<PIND_t, 0> PIND0_t;
+    typedef bit_t<PIND_t, 1> PIND1_t;
+    typedef bit_t<PIND_t, 2> PIND2_t;
+    typedef bit_t<PIND_t, 3> PIND3_t;
+    typedef bit_t<PIND_t, 4> PIND4_t;
+    typedef bit_t<PIND_t, 5> PIND5_t;
+    typedef bit_t<PIND_t, 6> PIND6_t;
+    typedef bit_t<PIND_t, 7> PIND7_t;
     struct PORTD_t
     {
         typedef DDRD_t ddr_t;
+        typedef PIND_t pin_t;
         inline static volatile uint8_t& ref()
         {
             return PORTD;
