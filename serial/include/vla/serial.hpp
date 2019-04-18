@@ -6,6 +6,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <vla/circular_buffer.hpp>
+#include <vla/hex_number.hpp>
 
 namespace vla {
 
@@ -255,6 +256,20 @@ namespace vla {
     };
 
     struct not_available{};
+
+    template<typename Serial>
+    inline void write_hex(Serial &s, uint8_t v)
+    {
+        write(s, "0x");
+        write(s, hex_number(v).data());
+    }
+
+    template<typename Serial>
+    inline void write_hex(Serial &s, uint16_t v)
+    {
+        write(s, "0x");
+        write(s, hex_number(v).data());
+    }
 
     template<typename Serial>
     inline void write(Serial &s, uint8_t byte)
