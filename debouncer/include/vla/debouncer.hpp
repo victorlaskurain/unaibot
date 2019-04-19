@@ -153,19 +153,16 @@ namespace vla {
         edge_policy_count_fall(param_t&& p){}
         void detect_edge(signal_state *signals, size_t c)
         {
-            detected_edge_count = 0;
             for (size_t i = 0; i < signal_count && i < c; ++i) {
                 if (signals[i].enabled) {
                     if (0 == signals[i].current_value &&
                         1 == signals[i].previous_value) {
                         ++_counters[i];
-                        ++detected_edge_count;
                     }
                 }
             }
         }
     public:
-        uint8_t detected_edge_count = 0;
         constexpr size_t number_of_counters()
         {
             return signal_count;
