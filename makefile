@@ -20,7 +20,7 @@ OBJCOPY    = avr-objcopy
 BIN_FORMAT = ihex
 
 # compiler flags
-CXXFLAGS  += -Wall -g -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
+CXXFLAGS  += -Wall -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
 
 # programmer configuration
 AVRDUDE    = avrdude -F -V
