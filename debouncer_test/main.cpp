@@ -69,14 +69,24 @@ static void write_counters(const signal_debouncer &csd)
     write_line(ser, "");
 }
 
+static void write_counters_if_changed(const signal_debouncer &csd)
+{
+    static uint16_t counter0 = -1, counter1 = -1;
+    if (counter0 != csd.counters()[0] || counter1 != csd.counters()[1]) {
+        write_counters(csd);
+        counter0 = csd.counters()[0];
+        counter1 = csd.counters()[1];
+    }
+}
+
 static void write_if_pin_value_changed(const signal_debouncer &csd)
 {
+#ifdef DEBUG_PIN_READ
     static uint8_t pin_value = -1;
     static uint8_t value     = -1;
     if (PORTB0_t::get() != pin_value || (uint8_t)csd.get_value(0) != value) {
         pin_value = PORTB0_t::get();
         value     = (uint8_t)csd.get_value(0);
-#ifdef DEBUG_PIN_READ
         write(ser, "\r\nPINB0    : ");
         write_hex(ser, (uint8_t)(PORTB_t::pin_t::ref() & _BV(0)));
         write(ser, "\r\nVALUE    : ");
@@ -88,25 +98,26 @@ static void write_if_pin_value_changed(const signal_debouncer &csd)
         write(ser, "\r\nTICKS    : ");
         write_hex(ser, ticks);
         write_line(ser, "");
-#endif
         write_counters(csd);
     }
+#endif
 }
 
 int main(void)
 {
     sei();
     write_line(ser, "BEGIN");
-    PORTB0_t::set_mode_input();
-    PORTB0_t::switch_on_pull_up();
+    switch_on_pull_ups<PORTB_t>();
     tick_0a_20khz tick;
     auto clock = rt_clock{tick};
     signal_debouncer csd{&clock};
     csd.set_enabled(0, true);
+    csd.set_enabled(1, true);
     write_if_pin_value_changed(csd);
     csd.start();
     while(true){
         csd.cycle_if_ready();
         write_if_pin_value_changed(csd);
+        write_counters_if_changed(csd);
     }
 }
