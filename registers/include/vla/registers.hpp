@@ -431,6 +431,27 @@ namespace vla {
     };
     typedef bit_t<PRR_t, PRADC> PRADC_t;
 
+    // port level model settings
+    template<typename port_t>
+    void set_mode_input()
+    {
+        port_t::ddr_t::ref() = 0xff;
+    }
+
+    template<typename port_t>
+    void switch_on_pull_ups()
+    {
+        set_mode_input<port_t>();
+        port_t::ref() = 0xff;
+    }
+
+    template<typename port_t>
+    void switch_off_pull_ups()
+    {
+        set_mode_input<port_t>();
+        port_t::ref() = 0x00;
+    }
+
 }
 
 #endif // VLA_REGISTERS_REGISTERS_HPP
