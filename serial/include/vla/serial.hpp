@@ -15,16 +15,22 @@ namespace vla {
     /**
      * According to ATmega328/P DATASHEET COMPLETE 24.4.1
      */
+    constexpr uint16_t ubrr_round(double v)
+    {
+        return v - double(int(v)) >= 0.5 ? v + 1 : v;
+    }
     constexpr uint16_t calculate_ubrr(uint32_t baud)
     {
-        return F_CPU / baud / 16 - 1;
+        return ubrr_round(double(F_CPU) / double(baud) / 16.0) - 1;
     }
 
     enum class serial_speed : uint16_t
     {
-        BAUD_9600  = calculate_ubrr(9600),
-        BAUD_19200 = calculate_ubrr(19200),
-        BAUD_38400 = calculate_ubrr(38400)
+        BAUD_9600   = calculate_ubrr(9600),
+        BAUD_19200  = calculate_ubrr(19200),
+        BAUD_38400  = calculate_ubrr(38400),
+        BAUD_57600  = calculate_ubrr(57600),
+        BAUD_115200 = calculate_ubrr(115200)
     };
 
     typedef void (*read_cb_t)(void*, uint8_t);
