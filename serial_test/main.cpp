@@ -1,5 +1,4 @@
 #include <vla/serial.hpp>
-#include <vla/circular_buffer.hpp>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>

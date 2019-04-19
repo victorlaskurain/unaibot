@@ -5,7 +5,7 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include <vla/circular_buffer.hpp>
+#include <vla/msg_queue.hpp>
 #include <vla/hex_number.hpp>
 
 namespace vla {
@@ -38,7 +38,7 @@ namespace vla {
     template <size_t BufferSize>
     struct basic_serial_async_write
     {
-        typedef circular_buffer<uint8_t, BufferSize> write_buffer_t;
+        typedef msg_queue<uint8_t, BufferSize> write_buffer_t;
         inline basic_serial_async_write()
         {
             vla::write_buffer = &write_buffer;
@@ -56,17 +56,15 @@ namespace vla {
         inline void write(const uint8_t byte)
         {
             while (write_buffer.full());
-            write_buffer.push_back(byte);
+            write_buffer.push(byte);
             UCSR0B |= (1<<UDRIE0);
         }
-        // :TODO: se podría optimizar usando funciones del del buffer
-        // para agregar rangos.
         template <typename BufferSizeType>
         inline BufferSizeType write_some(const uint8_t *bytes, BufferSizeType byte_count)
         {
             BufferSizeType bytes_written = 0;
             while (bytes_written < byte_count && !write_buffer.full()) {
-                write_buffer.push_back(bytes[bytes_written]);
+                write_buffer.push(bytes[bytes_written]);
                 ++bytes_written;
             }
             UCSR0B |= (1<<UDRIE0);
@@ -81,7 +79,7 @@ namespace vla {
         {
             auto buff = static_cast<write_buffer_t*>(p);
             if (!buff->empty()) {
-                UDR0 = buff->pop_front();
+                UDR0 = buff->pop();
             } else {
                 UCSR0B &= ~(1<<UDRIE0);
             }
@@ -95,7 +93,7 @@ namespace vla {
     template<size_t BufferSize>
     struct basic_serial_async_read
     {
-        typedef circular_buffer<uint8_t, BufferSize>  read_buffer_t;
+        typedef msg_queue<uint8_t, BufferSize>  read_buffer_t;
         inline basic_serial_async_read()
         {
             vla::read_buffer  = &read_buffer;
@@ -112,7 +110,7 @@ namespace vla {
         inline uint8_t read()
         {
             while (read_buffer.empty());
-            return read_buffer.pop_front();
+            return read_buffer.pop();
         }
         // :TODO: se podría optimizar usando funciones del del buffer
         // para extraer rangos.
@@ -121,7 +119,7 @@ namespace vla {
         {
             BufferSizeType read_count = 0;
             while (read_count < byte_count && !read_buffer.empty()) {
-                bytes[read_count] = read_buffer.pop_front();
+                bytes[read_count] = read_buffer.pop();
                 ++read_count;
             }
             return read_count;
@@ -134,7 +132,7 @@ namespace vla {
         read_buffer_t read_buffer;
         static void on_serial_received(void *buff, uint8_t byte)
         {
-            static_cast<read_buffer_t*>(buff)->push_back(byte);
+            static_cast<read_buffer_t*>(buff)->push(byte);
         };
     };
 
