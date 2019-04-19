@@ -57,7 +57,7 @@ namespace vla {
         }
         bool _full()
         {
-            return !is_empty && size == read;
+            return !is_empty && read == write;
         }
         void _read_ptr_next()
         {
