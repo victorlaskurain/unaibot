@@ -7,6 +7,15 @@
 
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus import utilities
+import os
+import time
+
+# This prevents arduino autoreset. It does not work on the first call
+# because it doesn't give time to the Arduino program to
+# initialize. After that it is not necessary until the configuration
+# of the port changes again but keeping it here seems like the
+# cleanest and simplest solution.
+os.system('stty -hup -F /dev/ttyACM0')
 
 client = ModbusSerialClient(
     method = "rtu",
@@ -15,8 +24,9 @@ client = ModbusSerialClient(
     bytesize = 8,
     parity = 'E',
     baudrate= 9600,
+    dsrdtr=False,
     timeout=0.1)
 conn = client.connect()
 print(conn)
-coil = client.read_coils(10001, 1, unit=0x0a)
+coil = client.read_coils(10001, 8, unit=0x0a)
 print(coil)
