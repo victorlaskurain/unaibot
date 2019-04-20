@@ -1,0 +1,174 @@
+* Things to make available via MODBUS
+
+** This data for each pin of each port (24 pins some reserved):
+
+*** Configuration and state data
+
+1) Whether the pin is available for the user.
+2) Whether the pin supports analog input.
+3) Whether the pin support analog output.
+4) I/O direction: 0 output, 1 input.
+5) I/O mode: 0 digital, 1 analog.
+6) Switch on/off internal pullup
+7) Switch on/off counter.
+
+In the atmega 328p every pin supports digital I/O. 1) lets us show
+which pins are reserved keeping always the same addresses.
+
+*** Current pin digital input value (24 pins)
+
+The pins that are not available for the user have an assigned address
+too. These makes mapping configuration space addresses to input space
+address more straightforward.
+
+This bits are located in the discrete input space (code 02).
+
+This bits are located in the "coils" space (codes 01, 05, 15).
+
+
+*** Current digital output value (24 pins)
+
+The pins that are not available for the user have an assigned address
+too. These makes mapping configuration space addresses to output space
+address more straightforward.
+
+This bits are located in the "coils" space (codes 01, 05, 15).
+
+*** Counters (24 pins)
+
+24 uint16_t. The pins that are not available for the user have an assigned address
+too. These makes mapping configuration space addresses to counter space
+address more straightforward.
+
+The counters are located in the internal registers or physical output
+registers space (codes 03, 06, 16).
+
+*** Analog input (24 pins)
+
+24 uint16_t. The pins that are not available for the user or do not
+support analog reading have an assigned address too. These makes
+mapping configuration space addresses to analog input space address
+more straightforward.
+
+24 uint16_t. Los pins que no están disponibles para el usuario o que
+no soportan entrada analógica también tienen su dirección de manera
+que se mantiene un mapeo entre bytes del espacio de configuración y
+bits del espacio de entrada analógica.
+
+The analog input registers are located in the internal registers or
+physical output registers space (codes 03, 06, 16).
+
+*** Analog output
+
+To be implemented
+
+* Coils
+
+** Configuration space
+
+The addresses in the range [0x0000, 0x0060) show the fixed
+characteristics of each ping. The fixed characteristics are those that
+are not subject to configuration, for example whether the pin supports
+analog input. The pins are numbered from 0 to 23.
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0000 |       | AO01  | AI01  | AU01  |       | AO00  | AI00  | AU00  |
+| 0008 |       | AO03  | AI03  | AU03  |       | AO02  | AI02  | AU02  |
+| 0010 |       | AO05  | AI05  | AU05  |       | AO04  | AI04  | AU04  |
+| 0018 |       | AO07  | AI07  | AU07  |       | AO06  | AI06  | AU06  |
+| 0020 |       | AO09  | AI09  | AU09  |       | AO08  | AI08  | AU08  |
+| 0028 |       | AO11  | AI11  | AU11  |       | AO10  | AI10  | AU10  |
+| 0030 |       | AO13  | AI13  | AU13  |       | AO12  | AI12  | AU12  |
+
+...
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0058 |       | AO23  | AI23  | AU23  |       | AO22  | AI22  | AU22  |
+
+- AUnn: 1 if the pin number nn is available for the user.
+  Address: AUnn -> nn * 4
+- AInn: 1 if the pin number nn supports analog input.
+  Address: AUnn -> nn * 4 + 1
+- AOnn: 1 if the pin number nn supports analog output.
+  Address: AUnn -> nn * 4 + 2
+
+The address range [0x0100, 0x0160) contains the configurable parameters of each pin. Pins are numbered from 0 to 23.
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0100 | EC01  | EIP01 | IOM01 | IOD01 | EC00  | EIP00 | IOM00 | IOD00 |
+| 0108 | EC03  | EIP03 | IOM03 | IOD03 | EC02  | EIP02 | IOM02 | IOD02 |
+| 0110 | EC05  | EIP05 | IOM05 | IOD05 | EC04  | EIP04 | IOM04 | IOD04 |
+| 0118 | EC07  | EIP07 | IOM07 | IOD07 | EC06  | EIP06 | IOM06 | IOD06 |
+
+...
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0158 | EC23  | EIP23 | IOM23 | IOD23 | EC22  | EIP22 | IOM22 | IOD22 |
+
+- IODnn: Input Output Direction. Set to use this pin as input, clear
+  to use it as output.
+  Address: IODnn -> nn * 4 + 0x100
+- IOMnn: Input Output Mode. Set to use pin for analog I/O. Clear to
+  use the pin for digital IO. Subject to the value of IODnn.
+  Address: IOMnn -> nn * 4 + 0x101
+- EIPnn: Enable Internal Pullup. Set to activate internal pull up
+  resistor. Setting EIPnn automatically sets IODnn.
+  Address: EIPnn -> nn * 4 + 0x102
+- ECnn: Enable Counter. Set to enable 16 bits counter linked to pin
+  nn.
+  Address: ECnn -> nn * 4 + 0x103
+
+** I/O Space
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0200 | PI07  | PI06  | PI05  | PI04  | PI03  | PI02  | PI01  | PI00  |
+| 0208 | PI15  | PI14  | PI13  | PI12  | PI11  | PI10  | PI09  | PI08  |
+| 0210 | PI23  | PI22  | PI21  | PI20  | PI19  | PI18  | PI17  | PI16  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+
+...
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0300 | PO07  | PO06  | PO05  | PO04  | PO03  | PO02  | PO01  | PO00  |
+| 0308 | PO15  | PO14  | PO13  | PO12  | PO11  | PO10  | PO09  | PO08  |
+| 0310 | PO23  | PO22  | PO21  | PO20  | PO19  | PO18  | PO17  | PO16  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+
+- PInn: Pin Input. Read only. The current digital value of pin nn.
+- POnn: Pin Output. Output value of the nn pin. Ignored if IODnn set
+  to input.
+
+* Records
+
+|------+------------|
+| addr | name       |
+|------+------------|
+| 0000 | COUNTER00  |
+| 0001 | COUNTER01  |
+|  ... | ...        |
+| 0017 | COUNTER23  |
+|  ... | ...        |
+| 0020 | ANALOGIN00 |
+| 0037 | ANALOGIN23 |
+|  ... | ...        |
+| 0100 | USER DATA  |
+|------+------------|
+
+- COUNTERnn: current value of the counter linked to the nn pin. Can be
+  written to set the counters to any required value although it is not
+  recommended to do it with the counter active since there is no any
+  type of synchronization implemented.
+
+- ANALOGINnn: current analog value of the nn pin.
