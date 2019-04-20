@@ -5,7 +5,7 @@
 
 using namespace vla;
 
-static auto& ser = get_serial_debug();
+static auto& ser = get_serial_async_debug();
 static uint16_t ticks = 0;
 
 template <class debouncer>
@@ -106,6 +106,7 @@ static void write_if_pin_value_changed(const signal_debouncer &csd)
 int main(void)
 {
     sei();
+    ser.set_speed(serial_speed::BAUD_115200);
     write_line(ser, "BEGIN");
     switch_on_pull_ups<PORTB_t>();
     tick_0a_20khz tick;
