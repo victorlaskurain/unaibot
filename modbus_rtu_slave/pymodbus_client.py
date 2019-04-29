@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-# import logging
-# logging.basicConfig()
-# log = logging.getLogger()
-# log.setLevel(logging.DEBUG)
+import logging
+logging.basicConfig()
+log = logging.getLogger()
+log.setLevel(logging.WARNING)
 
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus import utilities
@@ -25,8 +25,35 @@ client = ModbusSerialClient(
     parity = 'E',
     baudrate= 9600,
     dsrdtr=False,
-    timeout=0.1)
+    timeout=0.01)
 conn = client.connect()
-print(conn)
-coil = client.read_coils(10001, 8, unit=0x0a)
+
+print('')
+print('client.read_coils(10001, 8, unit=0x76)')
+coil = client.read_coils(10001, 8, unit=0x76)
+print(coil)
+
+print('')
+print('client.write_coil(0x0000, 1, unit=0x76)')
+coil = client.write_coil(0x0000, 1, unit=0x76)
+print(coil)
+
+print('')
+print('client.write_coils(0x0000, [0, 0], unit=0x76)')
+coil = client.write_coils(0x0000, [0, 0], unit=0x76)
+print(coil)
+
+print('')
+print('client.write_coils(0x0000, [0, 1], unit=0x76)')
+coil = client.write_coils(0x0000, [0, 1], unit=0x76)
+print(coil)
+
+print('')
+print('client.write_coils(0x0000, [1, 0], unit=0x76)')
+coil = client.write_coils(0x0000, [1, 0], unit=0x76)
+print(coil)
+
+print('')
+print('client.write_coils(0x0000, [1, 1], unit=0x76)')
+coil = client.write_coils(0x0000, [1, 1], unit=0x76)
 print(coil)

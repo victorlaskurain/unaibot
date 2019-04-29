@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     transmission_queue_t tr_q;
     pdu_handler_queue_t  pdu_q;
     transmission tr{clock, tr_q, pdu_q};
-    pdu_handler pduh{pdu_q, tr_q};
+    pdu_handler pduh{rtu_address{118}, pdu_q, tr_q};
     while(true) {
         tr();
         pduh();
