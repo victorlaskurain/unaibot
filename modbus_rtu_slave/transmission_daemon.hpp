@@ -75,7 +75,7 @@ public:
         rt_clock &c,
         transmission_queue_t &q,
         pdu_handler_queue_t &out_q,
-        serial_speed speed = serial_speed::BAUD_9600):c(c), q(q), out_q(out_q), ser(q, speed) {
+        serial_speed speed = serial_speed::BAUD_19200):c(c), q(q), out_q(out_q), ser(q, speed) {
     }
     void operator()();
 };
