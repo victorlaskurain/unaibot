@@ -36,9 +36,9 @@ This bits are located in the "coils" space (codes 01, 05, 15).
 
 *** Counters (24 pins)
 
-24 uint16_t. The pins that are not available for the user have an assigned address
-too. These makes mapping configuration space addresses to counter space
-address more straightforward.
+24 uint16_t. The pins that are not available for the user have an
+assigned address too. These makes mapping configuration space
+addresses to counter space address more straightforward.
 
 The counters are located in the internal registers or physical output
 registers space (codes 03, 06, 16).
@@ -96,7 +96,8 @@ analog input. The pins are numbered from 0 to 23.
 - AOnn: 1 if the pin number nn supports analog output.
   Address: AUnn -> nn * 4 + 2
 
-The address range [0x0100, 0x0160) contains the configurable parameters of each pin. Pins are numbered from 0 to 23.
+The address range [0x0100, 0x0160) contains the configurable
+parameters of each pin. Pins are numbered from 0 to 23.
 
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
 |      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |

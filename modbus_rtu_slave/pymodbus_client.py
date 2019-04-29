@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 log = logging.getLogger()
-log.setLevel(logging.WARNING)
+log.setLevel(logging.DEBUG)
 
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus import utilities
@@ -17,43 +17,48 @@ import time
 # cleanest and simplest solution.
 os.system('stty -hup -F /dev/ttyACM0')
 
-client = ModbusSerialClient(
-    method = "rtu",
-    port="/dev/ttyACM0",
-    stopbits = 1,
-    bytesize = 8,
-    parity = 'E',
-    baudrate= 19200,
-    dsrdtr=False,
-    timeout=0.01)
-conn = client.connect()
+def main():
+    client = ModbusSerialClient(
+        method = "rtu",
+        port="/dev/ttyACM0",
+        stopbits = 1,
+        bytesize = 8,
+        parity = 'E',
+        baudrate= 19200,
+        dsrdtr=False,
+        timeout=0.01)
+    conn = client.connect()
 
-print('')
-print('client.read_coils(10001, 8, unit=0x76)')
-coil = client.read_coils(10001, 8, unit=0x76)
-print(coil)
+    print('')
+    print('client.read_coils(0x0000, 0x13, unit=0x76)')
+    coil = client.read_coils(0x0000, 0x13, unit=0x76)
+    print(coil)
+    return
 
-print('')
-print('client.write_coil(0x0000, 1, unit=0x76)')
-coil = client.write_coil(0x0000, 1, unit=0x76)
-print(coil)
+    print('')
+    print('client.write_coil(0x0100, 1, unit=0x76)')
+    coil = client.write_coil(0x0100, 1, unit=0x76)
+    print(coil)
 
-print('')
-print('client.write_coils(0x0000, [0, 0], unit=0x76)')
-coil = client.write_coils(0x0000, [0, 0], unit=0x76)
-print(coil)
+    print('')
+    print('client.write_coils(0x0100, [0, 0], unit=0x76)')
+    coil = client.write_coils(0x0100, [0, 0], unit=0x76)
+    print(coil)
 
-print('')
-print('client.write_coils(0x0000, [0, 1], unit=0x76)')
-coil = client.write_coils(0x0000, [0, 1], unit=0x76)
-print(coil)
+    print('')
+    print('client.write_coils(0x0100, [0, 1], unit=0x76)')
+    coil = client.write_coils(0x0100, [0, 1], unit=0x76)
+    print(coil)
 
-print('')
-print('client.write_coils(0x0000, [1, 0], unit=0x76)')
-coil = client.write_coils(0x0000, [1, 0], unit=0x76)
-print(coil)
+    print('')
+    print('client.write_coils(0x0100, [1, 0], unit=0x76)')
+    coil = client.write_coils(0x0100, [1, 0], unit=0x76)
+    print(coil)
 
-print('')
-print('client.write_coils(0x0000, [1, 1], unit=0x76)')
-coil = client.write_coils(0x0000, [1, 1], unit=0x76)
-print(coil)
+    print('')
+    print('client.write_coils(0x0100, [1, 1], unit=0x76)')
+    coil = client.write_coils(0x0100, [1, 1], unit=0x76)
+    print(coil)
+
+if __name__ == '__main__':
+    main()

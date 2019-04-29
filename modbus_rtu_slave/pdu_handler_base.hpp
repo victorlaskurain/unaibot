@@ -113,6 +113,10 @@ namespace vla {
             return *static_cast<pdu_handler*>(this);
         }
     protected:
+        bool execute_read_coils(uint16_t address, uint16_t bit_count, uint8_t *byte_count, uint8_t *bytes)
+        {
+            return false;
+        }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
         {
             return false;
@@ -120,6 +124,14 @@ namespace vla {
         bool execute_write_single_coil(uint16_t address, bool v)
         {
             return false;
+        }
+        bool is_read_coils_supported()
+        {
+            return false;
+        }
+        bool is_read_coils_valid_data_address(uint16_t address, uint16_t bit_count)
+        {
+            return true;
         }
         bool is_write_coils_valid_data_address(uint16_t address, uint16_t bit_count)
         {
@@ -138,7 +150,8 @@ namespace vla {
             return false;
         }
     private:
-        static constexpr int WRITE_COILS_REPLY_LENGTH = 6;
+        static constexpr int WRITE_COILS_REPLY_LENGTH   = 6;
+        static constexpr int READ_WRITE_COILS_MAX_COILS = 0x07b0;
         rtu_address address;
         void append_crc(rtu_message &reply)
         {
@@ -157,9 +170,13 @@ namespace vla {
             }
             return true;
         }
+        bool is_read_coils_valid_data_value(uint16_t bit_count)
+        {
+            return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS;
+        }
         bool is_write_coils_valid_data_value(uint16_t bit_count, uint16_t byte_count)
         {
-            return bit_count > 0 && bit_count <= 0x07b0 &&
+            return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS &&
                 (bit_count / 8 + int(bit_count % 8 > 0)) == byte_count;
         }
         bool is_write_single_coil_valid_data_value(uint16_t v)
@@ -169,6 +186,9 @@ namespace vla {
         void execute_function(const rtu_message &indication, rtu_message &reply)
         {
             switch (indication.function_code()) {
+            case rtu_function_code::READ_COILS:
+                execute_read_coils(indication, reply);
+                break;
             case rtu_function_code::WRITE_SINGLE_COIL:
                 execute_write_single_coil(indication, reply);
                 break;
@@ -179,6 +199,31 @@ namespace vla {
                 make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
                 return;
             }
+        }
+        void execute_read_coils(const rtu_message &indication, rtu_message &reply)
+        {
+            uint16_t address   = flip_endianess(*(uint16_t*)&indication.buffer[2]),
+                     bit_count = flip_endianess(*(uint16_t*)&indication.buffer[4]);
+            if (!self().is_read_coils_supported()) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
+                return;
+            }
+            if (!self().is_read_coils_valid_data_address(address, bit_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_ADDRESS, indication, reply);
+                return;
+            }
+            if (!self().is_read_coils_valid_data_value(bit_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
+                return;
+            }
+            if (!self().execute_read_coils(address, bit_count, &reply.buffer[2], &reply.buffer[3])) {
+                make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);
+                return;
+            }
+            // copy address and function code
+            reply.buffer[0] = indication.buffer[0];
+            reply.buffer[1] = indication.buffer[1];
+            reply.length    = reply.buffer[2] + 3;
         }
         void execute_write_coils(const rtu_message &indication, rtu_message &reply)
         {
