@@ -117,11 +117,15 @@ namespace vla {
         {
             return false;
         }
-        bool execute_read_holding_registers(uint16_t address, uint16_t register_count, uint8_t *byte_count, uint16_t *words)
+        bool execute_read_registers(uint16_t address, uint16_t register_count, uint8_t *byte_count, uint16_t *words)
         {
             return false;
         }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
+        {
+            return false;
+        }
+        bool execute_write_registers(uint16_t address, uint16_t *words, uint8_t word_count)
         {
             return false;
         }
@@ -137,15 +141,19 @@ namespace vla {
         {
             return true;
         }
-        bool is_read_holding_registers_supported()
+        bool is_read_registers_supported()
         {
             return false;
         }
-        bool is_read_holding_registers_valid_data_address(uint16_t address, uint16_t register_count)
+        bool is_read_registers_valid_data_address(uint16_t address, uint16_t register_count)
         {
             return true;
         }
         bool is_write_coils_valid_data_address(uint16_t address, uint16_t bit_count)
+        {
+            return true;
+        }
+        bool is_write_registers_valid_data_address(uint16_t addr, uint16_t register_count)
         {
             return true;
         }
@@ -157,14 +165,24 @@ namespace vla {
         {
             return false;
         }
+        bool is_write_registers_supported()
+        {
+            return false;
+        }
         bool is_write_single_coil_supported()
         {
             return false;
         }
+        bool is_write_single_register_supported()
+        {
+            return self().is_write_registers_supported();
+        }
     private:
-        static constexpr int WRITE_COILS_REPLY_LENGTH             = 6;
-        static constexpr int READ_WRITE_COILS_MAX_COILS           = 0x07b0;
-        static constexpr int READ_HOLDING_REGISTERS_MAX_REGISTERS = 0x007d;
+        static constexpr int WRITE_COILS_REPLY_LENGTH      = 6;
+        static constexpr int WRITE_REGISTERS_REPLY_LENGTH  = 6;
+        static constexpr int READ_WRITE_COILS_MAX_COILS    = 0x07b0;
+        static constexpr int WRITE_REGISTERS_MAX_REGISTERS = 0x07b;
+        static constexpr int READ_REGISTERS_MAX_REGISTERS  = 0x007d;
         rtu_address address;
         void append_crc(rtu_message &reply)
         {
@@ -187,14 +205,19 @@ namespace vla {
         {
             return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS;
         }
-        bool is_read_holding_registers_valid_data_value(uint16_t register_count)
+        bool is_read_registers_valid_data_value(uint16_t register_count)
         {
-            return register_count > 0 && register_count <= READ_HOLDING_REGISTERS_MAX_REGISTERS;
+            return register_count > 0 && register_count <= READ_REGISTERS_MAX_REGISTERS;
         }
         bool is_write_coils_valid_data_value(uint16_t bit_count, uint16_t byte_count)
         {
             return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS &&
                 (bit_count / 8 + int(bit_count % 8 > 0)) == byte_count;
+        }
+        bool is_write_registers_valid_data_value(uint16_t register_count, uint8_t byte_count)
+        {
+            return register_count > 0 && register_count <= WRITE_REGISTERS_MAX_REGISTERS &&
+                byte_count == register_count * 2;
         }
         bool is_write_single_coil_valid_data_value(uint16_t v)
         {
@@ -213,10 +236,14 @@ namespace vla {
                 execute_write_coils(indication, reply);
                 break;
             case rtu_function_code::READ_HOLDING_REGISTERS:
-                execute_read_holding_registers(indication, reply);
+                execute_read_registers(indication, reply);
+                break;
+            case rtu_function_code::WRITE_MULTIPLE_REGISTERS:
+                execute_write_registers(indication, reply);
                 break;
             case rtu_function_code::WRITE_SINGLE_REGISTER:
-            case rtu_function_code::WRITE_MULTIPLE_REGISTERS:
+                execute_write_single_register(indication, reply);
+                break;
             default:
                 make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
                 return;
@@ -247,24 +274,24 @@ namespace vla {
             reply.buffer[1] = indication.buffer[1];
             reply.length    = reply.buffer[2] + 3;
         }
-        void execute_read_holding_registers(const rtu_message &indication, rtu_message &reply)
+        void execute_read_registers(const rtu_message &indication, rtu_message &reply)
         {
             uint16_t address        = flip_endianess(*(uint16_t*)&indication.buffer[2]),
                      register_count = flip_endianess(*(uint16_t*)&indication.buffer[4]);
-            if (!self().is_read_holding_registers_supported()) {
+            if (!self().is_read_registers_supported()) {
                 make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
                 return;
             }
-            if (!self().is_read_holding_registers_valid_data_address(address, register_count)) {
+            if (!self().is_read_registers_valid_data_address(address, register_count)) {
                 make_exception_reply(rtu_exception_code::ILLEGAL_DATA_ADDRESS, indication, reply);
                 return;
             }
-            if (!self().is_read_holding_registers_valid_data_value(register_count)) {
+            if (!self().is_read_registers_valid_data_value(register_count)) {
                 make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
                 return;
             }
             uint16_t *words = (uint16_t*)&reply.buffer[3];
-            if (self().execute_read_holding_registers(address, register_count, words)) {
+            if (self().execute_read_registers(address, register_count, words)) {
                 for (uint16_t i = 0; i < register_count; ++i) {
                     words[i] = flip_endianess(words[i]);
                 }
@@ -300,6 +327,30 @@ namespace vla {
             }
             make_echo_reply(indication, reply, WRITE_COILS_REPLY_LENGTH);
         }
+        void execute_write_registers(const rtu_message &indication, rtu_message &reply)
+        {
+            uint16_t address        = flip_endianess(*(uint16_t*)&indication.buffer[2]),
+                     register_count = flip_endianess(*(uint16_t*)&indication.buffer[4]);
+            uint8_t  byte_count     = indication.buffer[6];
+            uint16_t *words         = (uint16_t*)&indication.buffer[7];
+            if (!self().is_write_registers_supported()) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
+                return;
+            }
+            if (!self().is_write_registers_valid_data_address(address, register_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_ADDRESS, indication, reply);
+                return;
+            }
+            if (!self().is_write_registers_valid_data_value(register_count, byte_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
+                return;
+            }
+            if (!self().execute_write_registers(address, words, register_count)) {
+                make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);
+                return;
+            }
+            make_echo_reply(indication, reply, WRITE_REGISTERS_REPLY_LENGTH);
+        }
         void execute_write_single_coil(const rtu_message &indication, rtu_message &reply)
         {
             uint16_t address = flip_endianess(*(uint16_t*)&indication.buffer[2]),
@@ -322,6 +373,24 @@ namespace vla {
             }
             make_echo_reply_no_crc(indication, reply); // discard CRC in echo, it will be recalculated
             return;
+        }
+        void execute_write_single_register(const rtu_message &indication, rtu_message &reply)
+        {
+            uint16_t address        = flip_endianess(*(uint16_t*)&indication.buffer[2]),
+                     register_value = flip_endianess(*(uint16_t*)&indication.buffer[4]);
+            if (!self().is_write_single_register_supported()) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
+                return;
+            }
+            if (!self().is_write_registers_valid_data_address(address, 1)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_ADDRESS, indication, reply);
+                return;
+            }
+            if (!self().execute_write_registers(address, &register_value, 1)) {
+                make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);
+                return;
+            }
+            make_echo_reply_no_crc(indication, reply);
         }
         void make_echo_reply_no_crc(const rtu_message &indication, rtu_message &reply)
         {

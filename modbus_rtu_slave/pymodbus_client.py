@@ -3,7 +3,7 @@
 import logging
 logging.basicConfig()
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus import utilities
@@ -30,10 +30,14 @@ def main():
     conn = client.connect()
 
     print('')
-    print('client.read_holding_registers(0x0000, 4, unit=0x76)')
-    registers = client.read_holding_registers(0x0000, 4, unit=0x76)
+    print('client.write_register(0x0000, 0x10, unit=0x76)')
+    register = client.write_register(0x0000, 0x10, unit=0x76)
+    print(register)
+
+    print('')
+    print('client.write_registers(0x0000, [0x10, 0x20, 0x30], unit=0x76)')
+    registers = client.write_registers(0x0000, [0x10, 0x20, 0x30], unit=0x76)
     print(registers)
-    print(registers.registers)
 
     print('')
     print('client.read_holding_registers(0x0000, 1, unit=0x76)')
