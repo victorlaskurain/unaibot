@@ -25,7 +25,13 @@ namespace vla {
             }
             return true;
         }
-
+        bool execute_read_holding_registers(uint16_t address, uint16_t register_count, uint16_t *words)
+        {
+            for (uint16_t i = 0; i < register_count; ++i) {
+                words[i] = (i + 1) * 0x10;
+            }
+            return true;
+        }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint8_t bit_count)
         {
             return true;
@@ -44,6 +50,16 @@ namespace vla {
                    (addr >= 0x0100 && addr + count < 0x0160) || // I/O parameter space
                    (addr >= 0x0200 && addr + count < 0x0218) || // Input pin space
                    (addr >= 0x0300 && addr + count < 0x0318);   // Output pin space
+        }
+        bool is_read_holding_registers_supported()
+        {
+            return true;
+        }
+        bool is_read_holding_registers_valid_data_address(uint16_t addr, uint16_t count)
+        {
+            return (addr >= 0x0000 && addr + count < 0x0018) || // counter space
+                   (addr >= 0x0020 && addr + count < 0x0038) || // analog in space
+                   (addr >= 0x0100 && addr + count < 0x0020);   // user data space
         }
         bool is_write_coils_supported()
         {

@@ -117,6 +117,10 @@ namespace vla {
         {
             return false;
         }
+        bool execute_read_holding_registers(uint16_t address, uint16_t register_count, uint8_t *byte_count, uint16_t *words)
+        {
+            return false;
+        }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
         {
             return false;
@@ -130,6 +134,14 @@ namespace vla {
             return false;
         }
         bool is_read_coils_valid_data_address(uint16_t address, uint16_t bit_count)
+        {
+            return true;
+        }
+        bool is_read_holding_registers_supported()
+        {
+            return false;
+        }
+        bool is_read_holding_registers_valid_data_address(uint16_t address, uint16_t register_count)
         {
             return true;
         }
@@ -150,8 +162,9 @@ namespace vla {
             return false;
         }
     private:
-        static constexpr int WRITE_COILS_REPLY_LENGTH   = 6;
-        static constexpr int READ_WRITE_COILS_MAX_COILS = 0x07b0;
+        static constexpr int WRITE_COILS_REPLY_LENGTH             = 6;
+        static constexpr int READ_WRITE_COILS_MAX_COILS           = 0x07b0;
+        static constexpr int READ_HOLDING_REGISTERS_MAX_REGISTERS = 0x007d;
         rtu_address address;
         void append_crc(rtu_message &reply)
         {
@@ -174,6 +187,10 @@ namespace vla {
         {
             return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS;
         }
+        bool is_read_holding_registers_valid_data_value(uint16_t register_count)
+        {
+            return register_count > 0 && register_count <= READ_HOLDING_REGISTERS_MAX_REGISTERS;
+        }
         bool is_write_coils_valid_data_value(uint16_t bit_count, uint16_t byte_count)
         {
             return bit_count > 0 && bit_count <= READ_WRITE_COILS_MAX_COILS &&
@@ -195,6 +212,11 @@ namespace vla {
             case rtu_function_code::WRITE_COILS:
                 execute_write_coils(indication, reply);
                 break;
+            case rtu_function_code::READ_HOLDING_REGISTERS:
+                execute_read_holding_registers(indication, reply);
+                break;
+            case rtu_function_code::WRITE_SINGLE_REGISTER:
+            case rtu_function_code::WRITE_MULTIPLE_REGISTERS:
             default:
                 make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
                 return;
@@ -224,6 +246,35 @@ namespace vla {
             reply.buffer[0] = indication.buffer[0];
             reply.buffer[1] = indication.buffer[1];
             reply.length    = reply.buffer[2] + 3;
+        }
+        void execute_read_holding_registers(const rtu_message &indication, rtu_message &reply)
+        {
+            uint16_t address        = flip_endianess(*(uint16_t*)&indication.buffer[2]),
+                     register_count = flip_endianess(*(uint16_t*)&indication.buffer[4]);
+            if (!self().is_read_holding_registers_supported()) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_FUNCTION, indication, reply);
+                return;
+            }
+            if (!self().is_read_holding_registers_valid_data_address(address, register_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_ADDRESS, indication, reply);
+                return;
+            }
+            if (!self().is_read_holding_registers_valid_data_value(register_count)) {
+                make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
+                return;
+            }
+            uint16_t *words = (uint16_t*)&reply.buffer[3];
+            if (self().execute_read_holding_registers(address, register_count, words)) {
+                for (uint16_t i = 0; i < register_count; ++i) {
+                    words[i] = flip_endianess(words[i]);
+                }
+                reply.buffer[0] = indication.buffer[0];
+                reply.buffer[1] = indication.buffer[1];
+                reply.buffer[2] = register_count * 2;
+                reply.length    = register_count * 2 + 3;
+            } else {
+                make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);
+            }
         }
         void execute_write_coils(const rtu_message &indication, rtu_message &reply)
         {

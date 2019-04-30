@@ -30,10 +30,21 @@ def main():
     conn = client.connect()
 
     print('')
+    print('client.read_holding_registers(0x0000, 4, unit=0x76)')
+    registers = client.read_holding_registers(0x0000, 4, unit=0x76)
+    print(registers)
+    print(registers.registers)
+
+    print('')
+    print('client.read_holding_registers(0x0000, 1, unit=0x76)')
+    registers = client.read_holding_registers(0x0300, 1, unit=0x76)
+    print(registers)
+
+    print('')
     print('client.read_coils(0x0000, 0x13, unit=0x76)')
     coil = client.read_coils(0x0000, 0x13, unit=0x76)
     print(coil)
-    return
+    print([int(b) for b in coil.bits])
 
     print('')
     print('client.write_coil(0x0100, 1, unit=0x76)')
