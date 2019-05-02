@@ -129,9 +129,10 @@ namespace vla {
         {
             return false;
         }
-        bool execute_write_single_coil(uint16_t address, bool v)
+        bool execute_write_single_coil(uint16_t address, bool vparam)
         {
-            return false;
+            uint8_t v = vparam ? 1 : 0;
+            return execute_write_coils(address, &v, 1);
         }
         bool is_read_coils_supported()
         {
@@ -159,7 +160,7 @@ namespace vla {
         }
         bool is_write_single_coil_valid_data_address(uint16_t addr)
         {
-            return true;
+            return self().is_write_coils_valid_data_address(addr, 1);
         }
         bool is_write_coils_supported()
         {
@@ -171,7 +172,7 @@ namespace vla {
         }
         bool is_write_single_coil_supported()
         {
-            return false;
+            return self().is_write_coils_supported();
         }
         bool is_write_single_register_supported()
         {

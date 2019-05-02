@@ -79,10 +79,6 @@ namespace vla {
         {
             return true;
         }
-        bool is_write_single_coil_supported()
-        {
-            return true;
-        }
         bool is_write_coils_valid_data_address(uint16_t addr, uint16_t count)
         {
             return (addr >= 0x0100 && addr + count < 0x0160) || // I/O parameter space
