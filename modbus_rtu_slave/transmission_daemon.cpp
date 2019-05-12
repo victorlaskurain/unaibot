@@ -127,8 +127,7 @@ void vla::transmission::operator()()
                     q.ignore();
                     state = state_t::INITIAL;
                 }
-            }
-            if (q.pop(buffer_msg)) {
+            } else if (q.pop(buffer_msg)) {
                 ptxx_wait(!q.empty());
                 if (q.pop(timeout_msg)) {
                     q.push(buffer_msg); // enqueue again, just wait for the timeout
