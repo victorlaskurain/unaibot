@@ -66,91 +66,72 @@ To be implemented
 
 ** Configuration space
 
-The addresses in the range [0x0000, 0x0060) show the fixed
-characteristics of each ping. The fixed characteristics are those that
-are not subject to configuration, for example whether the pin supports
-analog input. The pins are numbered from 0 to 23.
+The pins are numbered from 0 to 23. First PORTD, then PORTB and
+finally PORTC.
 
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
 |      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0000 |       | AO01  | AI01  | AU01  |       | AO00  | AI00  | AU00  |
-| 0008 |       | AO03  | AI03  | AU03  |       | AO02  | AI02  | AU02  |
-| 0010 |       | AO05  | AI05  | AU05  |       | AO04  | AI04  | AU04  |
-| 0018 |       | AO07  | AI07  | AU07  |       | AO06  | AI06  | AU06  |
-| 0020 |       | AO09  | AI09  | AU09  |       | AO08  | AI08  | AU08  |
-| 0028 |       | AO11  | AI11  | AU11  |       | AO10  | AI10  | AU10  |
-| 0030 |       | AO13  | AI13  | AU13  |       | AO12  | AI12  | AU12  |
-
-...
-
+| 0000 | AU07  | AU06  | AU05  | AU04  | AU03  | AU02  | AU01  | AU00  |
+| 0008 | AU15  | AU14  | AU13  | AU12  | AU11  | AU10  | AU09  | AU08  |
+| 0010 | AU23  | AU22  | AU21  | AU20  | AU19  | AU18  | AU17  | AU16  |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+| 0018 | AI07  | AI06  | AI05  | AI04  | AI03  | AI02  | AI01  | AI00  |
+| 0020 | AI15  | AI14  | AI13  | AI12  | AI11  | AI10  | AI09  | AI08  |
+| 0028 | AI23  | AI22  | AI21  | AI20  | AI19  | AI18  | AI17  | AI16  |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0058 |       | AO23  | AI23  | AU23  |       | AO22  | AI22  | AU22  |
-
-- AUnn: 1 if the pin number nn is available for the user.
-  Address: AUnn -> nn * 4
-- AInn: 1 if the pin number nn supports analog input.
-  Address: AUnn -> nn * 4 + 1
-- AOnn: 1 if the pin number nn supports analog output.
-  Address: AUnn -> nn * 4 + 2
-
-The address range [0x0100, 0x0160) contains the configurable
-parameters of each pin. Pins are numbered from 0 to 23, first 8 pins
-from port D, then port B and then port C.
-
+| 0030 | AO07  | AO06  | AO05  | AO04  | AO03  | AO02  | AO01  | AO00  |
+| 0038 | AO15  | AO14  | AO13  | AO12  | AO11  | AO10  | AO09  | AO08  |
+| 0040 | AO23  | AO22  | AO21  | AO20  | AO19  | AO18  | AO17  | AO16  |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+| 0048 | IOD07 | IOD06 | IOD05 | IOD04 | IOD03 | IOD02 | IOD01 | IOD00 |
+| 0050 | IOD15 | IOD14 | IOD13 | IOD12 | IOD11 | IOD10 | IOD09 | IOD08 |
+| 0058 | IOD23 | IOD22 | IOD21 | IOD20 | IOD19 | IOD18 | IOD17 | IOD16 |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0100 | EC01  | EIP01 | IOM01 | IOD01 | EC00  | EIP00 | IOM00 | IOD00 |
-| 0108 | EC03  | EIP03 | IOM03 | IOD03 | EC02  | EIP02 | IOM02 | IOD02 |
-| 0110 | EC05  | EIP05 | IOM05 | IOD05 | EC04  | EIP04 | IOM04 | IOD04 |
-| 0118 | EC07  | EIP07 | IOM07 | IOD07 | EC06  | EIP06 | IOM06 | IOD06 |
-
-...
-
+| 0060 | IOM07 | IOM06 | IOM05 | IOM04 | IOM03 | IOM02 | IOM01 | IOM00 |
+| 0068 | IOM15 | IOM14 | IOM13 | IOM12 | IOM11 | IOM10 | IOM09 | IOM08 |
+| 0070 | IOM23 | IOM22 | IOM21 | IOM20 | IOM19 | IOM18 | IOM17 | IOM16 |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+| 0078 | EIP07 | EIP06 | EIP05 | EIP04 | EIP03 | EIP02 | EIP01 | EIP00 |
+| 0080 | EIP15 | EIP14 | EIP13 | EIP12 | EIP11 | EIP10 | EIP09 | EIP08 |
+| 0088 | EIP23 | EIP22 | EIP21 | EIP20 | EIP19 | EIP18 | EIP17 | EIP16 |
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0158 | EC23  | EIP23 | IOM23 | IOD23 | EC22  | EIP22 | IOM22 | IOD22 |
+| 0090 | EC07  | EC06  | EC05  | EC04  | EC03  | EC02  | EC01  | EC00  |
+| 0098 | EC15  | EC14  | EC13  | EC12  | EC11  | EC10  | EC09  | EC08  |
+| 00A0 | EC23  | EC22  | EC21  | EC20  | EC19  | EC18  | EC17  | EC16  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 00A8 | PI07  | PI06  | PI05  | PI04  | PI03  | PI02  | PI01  | PI00  |
+| 00B0 | PI15  | PI14  | PI13  | PI12  | PI11  | PI10  | PI09  | PI08  |
+| 00B8 | PI23  | PI22  | PI21  | PI20  | PI19  | PI18  | PI17  | PI16  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 00C0 | PO07  | PO06  | PO05  | PO04  | PO03  | PO02  | PO01  | PO00  |
+| 00C8 | PO15  | PO14  | PO13  | PO12  | PO11  | PO10  | PO09  | PO08  |
+| 00D0 | PO23  | PO22  | PO21  | PO20  | PO19  | PO18  | PO17  | PO16  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
 
+- AUnn: 1 if the pin number nn is available for the user. Read only.
+  Address: AUnn -> nn
+- AInn: 1 if the pin number nn supports analog input. Read only.
+  Address: AUnn -> nn + 0x18
+- AOnn: 1 if the pin number nn supports analog output. Read only.
+  Address: AUnn -> nn + 0x30
 - IODnn: Input Output Direction. Set to use this pin as input, clear
-  to use it as output.
-  Address: IODnn -> nn * 4 + 0x100
+  to use it as input.
+  Address: IODnn -> nn + 0x48
 - IOMnn: Input Output Mode. Set to use pin for analog I/O. Clear to
   use the pin for digital IO. Subject to the value of IODnn.
-  Address: IOMnn -> nn * 4 + 0x101
+  Address: IOMnn -> nn + 0x60
 - EIPnn: Enable Internal Pullup. Set to activate internal pull up
   resistor. Setting EIPnn automatically sets IODnn.
-  Address: EIPnn -> nn * 4 + 0x102
+  Address: EIPnn -> nn + 0x78
 - ECnn: Enable Counter. Set to enable 16 bits counter linked to pin
   nn.
-  Address: ECnn -> nn * 4 + 0x103
-
-** I/O Space
-
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0200 | PI07  | PI06  | PI05  | PI04  | PI03  | PI02  | PI01  | PI00  |
-| 0208 | PI15  | PI14  | PI13  | PI12  | PI11  | PI10  | PI09  | PI08  |
-| 0210 | PI23  | PI22  | PI21  | PI20  | PI19  | PI18  | PI17  | PI16  |
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-
-...
-
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-| 0300 | PO07  | PO06  | PO05  | PO04  | PO03  | PO02  | PO01  | PO00  |
-| 0308 | PO15  | PO14  | PO13  | PO12  | PO11  | PO10  | PO09  | PO08  |
-| 0310 | PO23  | PO22  | PO21  | PO20  | PO19  | PO18  | PO17  | PO16  |
-|------+-------+-------+-------+-------+-------+-------+-------+-------|
-
+  Address: ECnn -> nn + 0x90
 - PInn: Pin Input. Read only. The current digital value of pin nn.
+  Address: PInn -> nn + 0xA8
 - POnn: Pin Output. Output value of the nn pin. Ignored if IODnn set
   to input.
+  Address: PInn -> nn + 0xC0
 
 * Records
 

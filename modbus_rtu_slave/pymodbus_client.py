@@ -45,10 +45,16 @@ def main():
     print(registers)
 
     print('')
-    print('client.read_coils(0x0000, 0x13, unit=0x76)')
-    coil = client.read_coils(0x0000, 0x13, unit=0x76)
+    addr = 0x0000
+    bits = 0xd8
+    print('client.read_coils(0x%04x, 0x%02x, unit=0x76)'%(addr, bits))
+    coil = client.read_coils(addr, bits, unit=0x76)
     print(coil)
-    print([int(b) for b in coil.bits])
+    bits = [int(b) for b in coil.bits]
+    print ('        0, 1, 2, 3, 4, 5, 6, 7')
+    for i in range(int(len(bits) / 8)):
+        print('0x%04x %s'%(addr + i * 8, bits[i * 8:i * 8 + 8]))
+    return
 
     print('')
     print('client.write_coil(0x0100, 1, unit=0x76)')

@@ -113,7 +113,21 @@ namespace vla {
             return *static_cast<pdu_handler*>(this);
         }
     protected:
-        bool execute_read_coils(uint16_t address, uint16_t bit_count, uint8_t *byte_count, uint8_t *bytes)
+        bool execute_read_coils(uint16_t address, uint16_t bit_count, uint8_t *bytes)
+        {
+            for (uint16_t i = 0; i < bit_count / 8 + uint16_t(bool(bit_count % 8)); ++i) {
+                bytes[i] = 0;
+            }
+            for (uint16_t i = 0; i < bit_count; ++i) {
+                bool bit_value = 0;
+                if (!self().execute_read_single_coil(address + i, &bit_value)) {
+                    return false;
+                }
+                bytes[i / 8] |= uint8_t(bit_value) << (i % 8);
+            }
+            return true;
+        }
+        bool execute_read_single_coil(uint16_t address, bool *bit_value)
         {
             return false;
         }
@@ -266,10 +280,11 @@ namespace vla {
                 make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
                 return;
             }
-            if (!self().execute_read_coils(address, bit_count, &reply.buffer[2], &reply.buffer[3])) {
+            if (!self().execute_read_coils(address, bit_count, &reply.buffer[3])) {
                 make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);
                 return;
             }
+            reply.buffer[2] = bit_count / 8 + uint8_t(bool(bit_count % 8));
             // copy address and function code
             reply.buffer[0] = indication.buffer[0];
             reply.buffer[1] = indication.buffer[1];
