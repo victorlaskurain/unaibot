@@ -1,5 +1,4 @@
 #include "pdu_handler_daemon.hpp"
-#include "daemon_queues.hpp"
 #include "transmission_daemon.hpp"
 
 #include <vla/registers.hpp>

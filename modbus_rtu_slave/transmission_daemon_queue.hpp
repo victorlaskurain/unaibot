@@ -1,25 +1,17 @@
-#ifndef VLA_MODBUS_RTU_SLAVE_DAEMON_QUEUES
-#define VLA_MODBUS_RTU_SLAVE_DAEMON_QUEUES
+#ifndef VLA_MODBUS_RTU_SLAVE_TRANSMISSION_DAEMON_QUEUE
+#define VLA_MODBUS_RTU_SLAVE_TRANSMISSION_DAEMON_QUEUE
 
 #include <vla/msg_queue.hpp>
+#include "timeout_msg.hpp"
+#include "buffer_msg.hpp"
 #include <stdint.h>
 
 namespace vla {
 
-    struct timeout_msg_t
-    {
-    };
-
     using input_msg_t = uint8_t;
 
-    struct buffer_msg_t
-    {
-        uint8_t *data;
-        uint8_t size;
-    };
-
-// implements a poor man's variant in order to express different
-// message types in a safe and convenient way.
+    // implements a poor man's variant in order to express different
+    // message types in a safe and convenient way.
     class transmission_msg_t
     {
         enum class transmission_msg_tag
@@ -107,9 +99,6 @@ namespace vla {
             parent_t::_read_ptr_next();
         }
     };
-
-    using pdu_handler_queue_t = msg_queue_fast<buffer_msg_t, 1>;
-
 }
 
-#endif // VLA_MODBUS_RTU_SLAVE_DAEMON_QUEUES
+#endif
