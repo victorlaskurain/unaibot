@@ -435,6 +435,12 @@ namespace vla {
     template<typename port_t>
     void set_mode_input()
     {
+        port_t::ddr_t::ref() = 0x00;
+    }
+
+    template<typename port_t>
+    void set_mode_output()
+    {
         port_t::ddr_t::ref() = 0xff;
     }
 
