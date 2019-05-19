@@ -16,6 +16,7 @@ int main(int argc, char **argv)
     PORTB5_t::set();
     _delay_ms(1000);
     PORTB5_t::clear();
+    PORTB5_t::set_mode_input();
     _delay_ms(1000);
     tick_0a_20khz tick;
     rt_clock clock{tick};

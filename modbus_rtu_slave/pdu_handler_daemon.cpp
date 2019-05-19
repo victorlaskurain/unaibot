@@ -42,6 +42,11 @@ namespace vla {
     {
         return !get_bit<typename port_t::ddr_t>(bit);
     }
+    template<typename registry_t>
+    void set_bit(uint8_t bit, bool v)
+    {
+        registry_t::ref() = (registry_t::ref() & ~(1<<bit)) | (v<<bit);
+    }
 }
 
 bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_value)
@@ -121,6 +126,74 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
         break;
     case PO_PORTC:
         *bit_value = get_bit<PORTC_t>(bit);
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
+{
+    const uint8_t registry = address / 8;
+    const uint8_t bit      = address % 8;
+    switch (coil_record_number_t(registry)) {
+    case IOD_PORTD:
+        set_bit<PORTD_t::ddr_t>(bit, v);
+        break;
+    case IOD_PORTB:
+        set_bit<PORTB_t::ddr_t>(bit, v);
+        break;
+    case IOD_PORTC:
+        set_bit<PORTC_t::ddr_t>(bit, v);
+        break;
+    case IOM_PORTC:
+        // :TODO:
+        break;
+    case EIP_PORTD:
+        if (!is_input_mode<PORTD_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTD_t>(bit, v);
+        break;
+    case EIP_PORTB:
+        if (!is_input_mode<PORTB_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTB_t>(bit, v);
+        break;
+    case EIP_PORTC:
+        if (!is_input_mode<PORTC_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTC_t>(bit, v);
+        break;
+    case EC_PORTD:
+        // :TODO:
+        break;
+    case EC_PORTB:
+        // :TODO:
+        break;
+    case EC_PORTC:
+        // :TODO:
+        break;
+    case PO_PORTD:
+        if (is_input_mode<PORTD_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTD_t>(bit, v);
+        break;
+    case PO_PORTB:
+        if (is_input_mode<PORTB_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTB_t>(bit, v);
+        break;
+    case PO_PORTC:
+        if (is_input_mode<PORTC_t>(bit)) {
+            return false;
+        }
+        set_bit<PORTC_t>(bit, v);
         break;
     default:
         return false;

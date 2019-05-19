@@ -17,6 +17,18 @@ import time
 # cleanest and simplest solution.
 os.system('stty -hup -F /dev/ttyACM0')
 
+def get_and_print_coils(client):
+    print('')
+    addr = 0x0000
+    bits = 0xd8
+    print('client.read_coils(0x%04x, 0x%02x, unit=0x76)'%(addr, bits))
+    coil = client.read_coils(addr, bits, unit=0x76)
+    print(coil)
+    bits = [int(b) for b in coil.bits]
+    print ('        0, 1, 2, 3, 4, 5, 6, 7')
+    for i in range(int(len(bits) / 8)):
+        print('0x%04x %s'%(addr + i * 8, bits[i * 8:i * 8 + 8]))
+
 def main():
     client = ModbusSerialClient(
         method = "rtu",
@@ -44,16 +56,32 @@ def main():
     registers = client.read_holding_registers(0x0300, 1, unit=0x76)
     print(registers)
 
-    print('')
-    addr = 0x0000
-    bits = 0xd8
-    print('client.read_coils(0x%04x, 0x%02x, unit=0x76)'%(addr, bits))
-    coil = client.read_coils(addr, bits, unit=0x76)
+    get_and_print_coils(client)
+
+    print('SET PINS PD2 TO PD7 DIRECTION AS OUTPUT')
+    print('client.write_coils(0x004a, [1, 1, 1, 1, 1, 1], unit=0x76)')
+    coil = client.write_coils(0x004a, [1, 1, 1, 1, 1, 1], unit=0x76)
     print(coil)
-    bits = [int(b) for b in coil.bits]
-    print ('        0, 1, 2, 3, 4, 5, 6, 7')
-    for i in range(int(len(bits) / 8)):
-        print('0x%04x %s'%(addr + i * 8, bits[i * 8:i * 8 + 8]))
+    get_and_print_coils(client)
+
+    print('SET PINS PD2 TO PD7 TO ONE')
+    print('client.write_coils(0x00c2, [1, 1, 1, 1, 1, 1], unit=0x76)')
+    coil = client.write_coils(0x00c2, [1, 1, 1, 1, 1, 1], unit=0x76)
+    print(coil)
+    get_and_print_coils(client)
+
+    print('\nSET PIN PB5 DIRECTION AS OUTPUT')
+    print('client.write_coil(0x0055, 1, unit=0x76)')
+    coil = client.write_coil(0x0055, 1, unit=0x76)
+    print(coil)
+    get_and_print_coils(client)
+
+    print('\nSET PIN PB5 TO TO ONE')
+    print('client.write_coil(0x00cd, 1, unit=0x76)')
+    coil = client.write_coil(0x00cd, 1, unit=0x76)
+    print(coil)
+    get_and_print_coils(client)
+
     return
 
     print('')

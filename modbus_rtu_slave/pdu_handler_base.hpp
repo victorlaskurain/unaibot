@@ -137,7 +137,14 @@ namespace vla {
         }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
         {
-            return false;
+            for (uint16_t i = 0; i < bit_count; ++i) {
+                if (!self().execute_write_single_coil(
+                        address + i,
+                        bits[i / 8] & (1<<(i % 8)))) {
+                    return false;
+                }
+            }
+            return true;
         }
         bool execute_write_registers(uint16_t address, uint16_t *words, uint8_t word_count)
         {
@@ -145,8 +152,7 @@ namespace vla {
         }
         bool execute_write_single_coil(uint16_t address, bool vparam)
         {
-            uint8_t v = vparam ? 1 : 0;
-            return execute_write_coils(address, &v, 1);
+            return false;
         }
         bool is_read_coils_supported()
         {

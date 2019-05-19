@@ -77,12 +77,10 @@ void vla::transmission::operator()()
             }
         }
         if (state_t::READY == state) {
-            PORTB5_t::clear();
             ptxx_wait(!q.empty());
             if (q.pop(input_msg)) {
                 set_alarm(inter_frame_delay);
                 buffer[buffer_i++] = input_msg;
-                PORTB5_t::set();
                 state = state_t::RECEPTION;
             } else if (q.pop(buffer_msg)) {
                 if (must_transmit(buffer_msg)) {
