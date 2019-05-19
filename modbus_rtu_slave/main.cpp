@@ -1,5 +1,6 @@
 #include "pdu_handler_daemon.hpp"
 #include "transmission_daemon.hpp"
+#include "adc_daemon.hpp"
 
 #include <vla/registers.hpp>
 #include <vla/serial.hpp>
@@ -20,10 +21,13 @@ int main(int argc, char **argv)
     rt_clock clock{tick};
     transmission_queue_t tr_q;
     pdu_handler_queue_t  pdu_q;
+    adc_queue_t          adc_q;
     transmission tr{clock, tr_q, pdu_q};
-    pdu_handler pduh{rtu_address{118}, pdu_q, tr_q};
+    pdu_handler  pduh{rtu_address{118}, pdu_q, tr_q, adc_q};
+    adc_daemon   adc{adc_q};
     while(true) {
         tr();
         pduh();
+        adc();
     }
 }

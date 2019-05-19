@@ -4,15 +4,41 @@
 #include "transmission_daemon_queue.hpp"
 #include "pdu_handler_daemon_queue.hpp"
 #include "pdu_handler_base.hpp"
+#include "adc_daemon_queue.hpp"
 #include <vla/protothreads.hpp>
 
 namespace vla {
 
+    class adc_state
+    {
+        uint8_t enabled = 0;
+        uint16_t values[uint8_t(adc_id_t::ADC7) + 1] = {0};
+    public:
+        uint16_t get_value(adc_id_t id)
+        {
+            return values[uint8_t(id)];
+        }
+        bool is_enabled(adc_id_t id)
+        {
+            return enabled & (to_bit_mask(id));
+        }
+        void set_enabled(adc_id_t id, bool enable)
+        {
+            enabled |= to_bit_mask(id);
+        }
+        void set_value(adc_id_t id, uint16_t v)
+        {
+            values[uint8_t(id)] = v;
+        }
+    };
+
     class pdu_handler : public ptxx_thread, public pdu_handler_base<pdu_handler>
     {
         pdu_handler_queue_t &in_q;
-        transmission_queue_t &out_q;
-        buffer_msg_t msg = {};
+        transmission_queue_t &to_transmission_daemon_q;
+        adc_queue_t &to_adc_q;
+        buffer_msg_t buffer_msg = {};
+        adc_state adc;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
         // member functions protected and callable from the parent.
@@ -84,10 +110,14 @@ namespace vla {
         }
     public:
         pdu_handler(
-            rtu_address addr,
-            pdu_handler_queue_t &in_q,
-            transmission_queue_t &out_q):
-            handler_base(addr), in_q(in_q), out_q(out_q) {}
+            rtu_address           addr,
+            pdu_handler_queue_t  &in_q,
+            transmission_queue_t &to_transmission_daemon_q,
+            adc_queue_t          &to_adc_q):
+            handler_base(addr), in_q(in_q),
+            to_transmission_daemon_q(to_transmission_daemon_q),
+            to_adc_q(to_adc_q)
+        {}
         void operator()();
     };
 

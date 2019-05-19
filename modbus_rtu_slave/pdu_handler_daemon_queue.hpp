@@ -4,6 +4,7 @@
 #include <vla/msg_queue.hpp>
 #include "buffer_msg.hpp"
 #include "timeout_msg.hpp"
+#include "adc_set_value_msg.hpp"
 #include <stdint.h>
 
 namespace vla {
@@ -15,11 +16,13 @@ namespace vla {
         enum class pdu_handler_msg_tag
         {
             NONE,
-            BUFFER
+            BUFFER,
+            ADC_SET_VALUE
         };
         pdu_handler_msg_tag tag = pdu_handler_msg_tag::NONE;
         union {
-            buffer_msg_t  buffer;
+            buffer_msg_t        buffer;
+            adc_set_value_msg_t adc_set_value;
         } msg;
     public:
         pdu_handler_msg_t()                   = default;
@@ -37,10 +40,23 @@ namespace vla {
             }
             return false;
         }
+        bool get(adc_set_value_msg_t &v)
+        {
+            if (pdu_handler_msg_tag::ADC_SET_VALUE == tag) {
+                v = msg.adc_set_value;
+                return true;
+            }
+            return false;
+        }
         void put(buffer_msg_t v)
         {
             msg.buffer = v;
             tag = pdu_handler_msg_tag::BUFFER;
+        }
+        void put(adc_set_value_msg_t v)
+        {
+            msg.adc_set_value = v;
+            tag = pdu_handler_msg_tag::ADC_SET_VALUE;
         }
     };
 

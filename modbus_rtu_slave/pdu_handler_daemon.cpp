@@ -84,7 +84,7 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
         // no analog mode supported
         break;
     case IOM_PORTC:
-        // :TODO:
+        *bit_value = adc.is_enabled(adc_id_t(bit));
         break;
     case EIP_PORTD:
         *bit_value = is_input_mode<PORTD_t>(bit) && get_bit<PORTD_t>(bit);
@@ -130,13 +130,18 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
 
 void vla::pdu_handler::operator()()
 {
+    adc_set_value_msg_t adc_msg;
     ptxx_begin();
     while (true) {
-        ptxx_wait(in_q.pop(msg));
-        rtu_message rtu_msg{msg.data, msg.size};
-        handle_indication(rtu_msg, rtu_msg);
-        msg.size = rtu_msg.length;
-        out_q.push(msg);
+        ptxx_wait(!in_q.empty());
+        if (in_q.pop(buffer_msg)) {
+            rtu_message rtu_msg{buffer_msg.data, buffer_msg.size};
+            handle_indication(rtu_msg, rtu_msg);
+            buffer_msg.size = rtu_msg.length;
+            to_transmission_daemon_q.push(buffer_msg);
+        } else if (in_q.pop(adc_msg)) {
+            adc.set_value(adc_msg.id, adc_msg.value);
+        }
     }
     ptxx_end();
 }
