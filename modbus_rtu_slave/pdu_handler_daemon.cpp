@@ -56,12 +56,19 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
     *bit_value = 0;
     switch (coil_record_number_t(registry)) {
     case AU_PORTD:
-        if (bit <= 1) {
-            break;
+        if (bit > 1) {
+            *bit_value = 1;
         }
+        break;
     case AU_PORTB:
+        if (bit < 6) {
+            *bit_value = 1;
+        }
+        break;
     case AU_PORTC:
-        *bit_value = 1;
+        if (bit != 7) {
+            *bit_value = 1;
+        }
         break;
     case AI_PORTC:
         *bit_value = 1;
