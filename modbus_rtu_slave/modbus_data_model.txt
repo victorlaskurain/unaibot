@@ -115,7 +115,7 @@ finally PORTC.
   Address: AUnn -> nn + 0x18
 - AOnn: 1 if the pin number nn supports analog output. Read only.
   Address: AUnn -> nn + 0x30
-- IODnn: Input Output Direction. Set to use this pin as input, clear
+- IODnn: Input Output Direction. Set to use this pin as output, clear
   to use it as input.
   Address: IODnn -> nn + 0x48
 - IOMnn: Input Output Mode. Set to use pin for analog I/O. Clear to
