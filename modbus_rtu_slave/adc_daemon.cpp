@@ -14,6 +14,8 @@ namespace vla {
         ADEN_t::set();
         // set right align, we will use full precision
         ADLAR_t::clear();
+        // set reference in the ADMUX.REFS register
+        ADMUX_t::set_ref(ADMUX_REF_t::AVCC);
     }
 
     inline void disable_adc()
@@ -68,10 +70,11 @@ void vla::adc_daemon::operator()()
         if (enabled_count) {
             if (read_ready()) {
                 if (channels[active_channel_i].cb) {
-                    channels[active_channel_i].cb(
-                        channels[active_channel_i].data,
-                        adc_id_t(active_channel_i),
-                        read_adc_value());
+                    last_read = read_adc_value();
+                    ptxx_wait(channels[active_channel_i].cb(
+                                  channels[active_channel_i].data,
+                                  adc_id_t(active_channel_i),
+                                  last_read));
                 }
                 start_read_next_enabled_channel();
             }
@@ -85,8 +88,9 @@ void vla::adc_daemon::start_read_next_enabled_channel()
 {
     uint8_t i = uint8_t(next(adc_id_t(active_channel_i)));
     while (!channels[i].cb) {
-        i = uint8_t(next(adc_id_t(active_channel_i)));
+        i = uint8_t(next(adc_id_t(i)));
     }
     active_channel_i = i;
+    ADMUX_t::select_channel(ADMUX_t::channel(i));
     ADSC_t::set();
 }

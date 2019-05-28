@@ -24,7 +24,7 @@ namespace vla {
         }
         void set_enabled(adc_id_t id, bool enable)
         {
-            enabled |= to_bit_mask(id);
+            enabled = (enabled & ~to_bit_mask(id)) | (enable<<uint8_t(id));
         }
         void set_value(adc_id_t id, uint16_t v)
         {
@@ -44,13 +44,7 @@ namespace vla {
         // member functions protected and callable from the parent.
         friend class pdu_handler_base<pdu_handler>;
     protected:
-        bool execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words)
-        {
-            for (uint16_t i = 0; i < register_count; ++i) {
-                words[i] = (i + 1) * 0x10;
-            }
-            return true;
-        }
+        bool execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words);
         bool execute_read_single_coil(uint16_t address, bool *bit_value);
         bool execute_write_registers(uint16_t address, uint16_t *words, uint8_t word_count)
         {
@@ -75,9 +69,7 @@ namespace vla {
         }
         bool is_read_registers_valid_data_address(uint16_t addr, uint16_t count)
         {
-            return (addr >= 0x0000 && addr + count < 0x0018) || // counter space
-                   (addr >= 0x0020 && addr + count < 0x0038) || // analog in space
-                   (addr >= 0x0100 && addr + count < 0x0020);   // user data space
+            return (addr >= 0x0000 && addr + count < 0x0030);   // user data space
         }
         bool is_write_registers_valid_data_address(uint16_t addr, uint16_t count)
         {

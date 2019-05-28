@@ -16,7 +16,7 @@ namespace vla {
         return adc_id_t((uint8_t(adc_id) + 1) % uint8_t(adc_id_t::ADC_MAX));
     }
 
-    typedef void(*adc_callback_t)(void *data, adc_id_t id, uint16_t value);
+    typedef bool(*adc_callback_t)(void *data, adc_id_t id, uint16_t value);
     struct adc_set_enabled_msg_t
     {
         adc_id_t       id;
@@ -38,9 +38,20 @@ namespace vla {
             id(id),
             data(&q),
             cb([](void *q, adc_id_t id, uint16_t v) {
-                static_cast<ReplyQueue*>(q)->push(adc_set_value_msg_t{id, v});
+                ReplyQueue *queue = static_cast<ReplyQueue*>(q);
+                if (queue->full()) {
+                    return false;
+                }
+                queue->push(adc_set_value_msg_t{id, v});
+                return true;
             })
         {}
+        static adc_msg_t msg_disable(adc_id_t id)
+        {
+            adc_msg_t msg;
+            msg.id = id;
+            return msg;
+        }
     };
 
     // this queue never gets called from interruptions so no locking

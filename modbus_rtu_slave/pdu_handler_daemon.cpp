@@ -155,7 +155,12 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
         set_bit<PORTC_t::ddr_t>(bit, v);
         break;
     case IOM_PORTC:
-        // :TODO:
+        if (v) {
+            to_adc_q.push(adc_msg_t{adc_id_t(bit), in_q});
+        } else {
+            to_adc_q.push(adc_msg_t::msg_disable(adc_id_t(bit)));
+            adc.set_enabled(adc_id_t(bit), 0);
+        }
         break;
     case EIP_PORTD:
         if (!is_input_mode<PORTD_t>(bit)) {
@@ -220,8 +225,21 @@ void vla::pdu_handler::operator()()
             buffer_msg.size = rtu_msg.length;
             to_transmission_daemon_q.push(buffer_msg);
         } else if (in_q.pop(adc_msg)) {
+            adc.set_enabled(adc_msg.id, true);
             adc.set_value(adc_msg.id, adc_msg.value);
         }
     }
     ptxx_end();
+}
+
+bool vla::pdu_handler::execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words)
+{
+    for (uint16_t i = 0; i < register_count; ++i, ++address) {
+        if (address >= 0 && address < uint8_t(adc_id_t::ADC_MAX)) {
+            words[i] = adc.get_value(adc_id_t(address));
+        } else {
+            words[i] = i * 16;
+        }
+    }
+    return true;
 }

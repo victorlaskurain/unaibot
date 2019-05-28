@@ -381,9 +381,23 @@ namespace vla {
     enum class ADMUX_REF_t:uint8_t {AREF = 0, AVCC = 1, INTERNAL_1_1 = 3};
     struct ADMUX_t
     {
+        enum class channel : uint8_t {
+            ADC0,
+            ADC1,
+            ADC2,
+            ADC3,
+            ADC4,
+            ADC5,
+            ADC6,
+            ADC7
+        };
         inline static volatile uint8_t& ref()
         {
             return ADMUX;
+        }
+        inline static void select_channel(channel ch)
+        {
+            ADMUX = (ADMUX & ~0x07) | static_cast<uint8_t>(ch);
         }
         template<typename pin_t>
         inline static void select_channel(pin_t = pin_t{})
