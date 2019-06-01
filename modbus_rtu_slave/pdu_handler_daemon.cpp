@@ -66,7 +66,7 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
         }
         break;
     case AU_PORTC:
-        if (bit != 7) {
+        if (bit != 7 && bit != 6) {
             *bit_value = 1;
         }
         break;
