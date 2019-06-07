@@ -5,6 +5,28 @@
 #include <avr/interrupt.h>
 
 namespace vla {
+
+    /**
+     * Example of usage of this library to control a small
+     * servo. Using an 8 bit counter the available resolution is
+     * rather limited but enough for some applications.
+     *
+     * // f = 16000000 / 1024 / 512 = 30.517578125
+     * // min_pulse = 1/f/256 = 1.28 ms
+     * // 0.5ms = left_pulse   * min_pulse -> left_pulse   =  3.90 ->  4
+     * //   1ms = left_pulse   * min_pulse -> left_pulse   =  7.81 ->  8 SAFE
+     * // 1.5ms = center_pulse * min_pulse -> center_pulse = 11.71 -> 12
+     * //   2ms = right_pulse  * min_pulse -> right_pulse  = 15.62 -> 16 SAFEish
+     * // 2.5ms = right_pulse  * min_pulse -> right_pulse  = 19.53 -> 20
+     * PORTD3_t::set_mode_output();
+     * cm_unit_2B::timer_t pwm_timer(tc_mode::PHASE_CORRECT_PWM, clock_source_2::PRESCALE_1024);
+     * cm_unit_2B pwm(pwm_timer, cm_mode::PC_PWM_NON_INVERTING);
+     * pwm.set_output_compare(12);  // center servo
+     * pwm.set_output_compare(8);   // full left (safe)
+     * pwm.set_output_compare(16);  // full right (safe)
+     *
+     */
+
     enum class clock_source_0
     {
         STOP,
@@ -38,9 +60,10 @@ namespace vla {
     };
 
     enum class tc_mode : uint8_t {
-        NORMAL                  = 0,
-        PHASE_CORRECT_PWM       = _BV(WGM00),
-        TOGGLE_ON_COMPARE_MATCH = _BV(WGM01)
+        NORMAL,
+        FAST_PWM,
+        PHASE_CORRECT_PWM,
+        TOGGLE_ON_COMPARE_MATCH
     };
 
     template<tc_id tcid>
@@ -104,6 +127,10 @@ namespace vla {
         void set_mode(tc_mode mode)
         {
             switch (mode) {
+            case tc_mode::FAST_PWM:
+                pin_t<ctrl_reg_a, 0>::set();
+                pin_t<ctrl_reg_a, 1>::set();
+                break;
             case tc_mode::PHASE_CORRECT_PWM:
                 pin_t<ctrl_reg_a, 0>::set();
                 pin_t<ctrl_reg_a, 1>::clear();
@@ -130,10 +157,14 @@ namespace vla {
     };
 
     enum class cm_mode : uint8_t {
-        DISCONNECTED,
-        TOGGLE_ON_COMPARE_MATCH,
-        CLEAR_ON_COMPARE_MATCH,
-        SET_ON_COMPARE_MATCH
+        DISCONNECTED             = 0,
+        TOGGLE_ON_COMPARE_MATCH  = 1,
+        CLEAR_ON_COMPARE_MATCH   = 2,
+        SET_ON_COMPARE_MATCH     = 3,
+        FAST_PWM_NON_INVERTING   = 2,
+        FAST_PWM_INVERTING       = 3,
+        PC_PWM_NON_INVERTING     = 2,
+        PC_PWM_INVERTING         = 3,
     };
 
     template<tc_id tcid, cm_id cmid>
