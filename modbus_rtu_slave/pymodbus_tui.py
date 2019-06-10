@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import curses
-from curses import textpad
+from curses.textpad import Textbox
 from curses import panel
 
 import logging
@@ -124,6 +124,10 @@ class Table:
         row0 = 1 + self.header_h
         for i, row in enumerate(self._data[:self.row_count]):
             _draw_line(self.window, self.text_ranges, row, row0 + i)
+    def hide_selection(self, hide = True):
+        pass
+    def handle_ch(self, key):
+        pass
 
 class CoilTable(Table):
     _addresses = [
@@ -147,6 +151,7 @@ class CoilTable(Table):
     _coil_count = len(_addresses) * 8
     def __init__(self):
         self._selected = [0, 0]
+        self._selection_visible = False
         super().__init__({
             'row_count': int(self._coil_count / 8),
             'col_formats': ['{:6}', '{:8}', '{:16}'],
@@ -164,12 +169,16 @@ class CoilTable(Table):
         self._clear_selection()
         if key == curses.KEY_UP:
             self._selected[0] = (self._selected[0] - 1) % (self.row_count)
+            self._selection_visible = True
         elif key == curses.KEY_RIGHT:
             self._selected[1] = (self._selected[1] + 1) % 8
+            self._selection_visible = True
         elif key == curses.KEY_DOWN:
             self._selected[0] = (self._selected[0] + 1) % (self.row_count)
+            self._selection_visible = True
         elif key == curses.KEY_LEFT:
             self._selected[1] = (self._selected[1] - 1) % 8
+            self._selection_visible = True
         elif key == ord('1'):
             action = ['write_coils', self.selected_coil_addr(), [1]]
         elif key == ord('0'):
@@ -179,9 +188,13 @@ class CoilTable(Table):
             action = ['write_coils', coil_offset, [int(not self._coils[coil_offset])]]
         self._draw_selection()
         return action
+    def hide_selection(self, hide = True):
+        self._selection_visible = not hide
     def selected_coil_addr(self):
         return self._selected[0] * 8 + 7 - self._selected[1]
     def _draw_selection(self):
+        if not self._selection_visible:
+            return
         self.window.chgat(self._selected[0] + 4, self._selected[1] + 8, 1, curses.A_REVERSE)
     def _clear_selection(self):
         self.window.chgat(self._selected[0] + 4, self._selected[1] + 8, 1, curses.A_NORMAL)
@@ -191,12 +204,36 @@ class CoilTable(Table):
         super().set_data(self._format_table_data(coils))
         self._draw_selection()
 
+def get_text(h=1, w=8, y=10, x=10, txt=''):
+    curs = curses.curs_set(1)
+    win = curses.newwin(h + 2, w + 2, y, x)
+    p = panel.new_panel(win)
+    win.box()
+    # w + 1 so that we can read w chars
+    sw = win.derwin(h, w + 0, 1, 1)
+    sw.addstr(0, 0, txt)
+    win.refresh()
+    box = Textbox(sw)
+    box.edit()
+    panel.update_panels()
+    sw.refresh()
+    curses.curs_set(curs)
+    return box.gather()
+
+def get_int(h=1, w=8, y=10, x=10, txt=''):
+    txt = get_text(h, w, y, x, txt)
+    if '0x' == txt[:2]:
+        return int(txt, 16)
+    else:
+        return int(txt)
+
 class RegisterTable(Table):
     _counter_count   = 16
     _analog_in_count =  8
     _register_count = _counter_count + _analog_in_count
     def __init__(self):
-        self._selected = [0, 0]
+        self._selection_visible = False
+        self._selected     = 0
         self._addresses    = ['0x%04x'%i for i in range(self._register_count)]
         self._descriptions = ['ANALOGIN%02d'%i for i in range(self._analog_in_count)] + \
                              ['COUNTER%02d' %i for i in range(self._counter_count)]
@@ -205,14 +242,44 @@ class RegisterTable(Table):
             'col_formats': ['{:6}', '{:6}', '{:11}'],
             'header': ['ADDR\n', 'VALUE', 'DESCRIPTION']
         }, data = [0 for i in range(self._register_count)])
+    def _clear_selection(self):
+        self.window.chgat(self._selected + 4, 8, 6, curses.A_NORMAL)
+    def _draw_selection(self):
+        if not self._selection_visible:
+            return
+        self.window.chgat(self._selected + 4, 8, 6, curses.A_REVERSE)
     def _format_table_data(self, counters, analog_values):
         lines = ['0x%04x'%c for c in counters] + \
                 ['0x%04x'%a for a in analog_values]
         return list(zip(self._addresses, lines, self._descriptions))
+    def handle_ch(self, key):
+        action = None
+        self._clear_selection()
+        if key == curses.KEY_UP:
+            self._selected = (self._selected - 1) % (self.row_count)
+            self._selection_visible = True
+        elif key == curses.KEY_DOWN:
+            self._selected = (self._selected + 1) % (self.row_count)
+            self._selection_visible = True
+        elif key == ord('\n'):
+            wy, wx = self.window.getbegyx()
+            initial_txt = '0x%04x'%self._values[self._selected]
+            try:
+                value = get_int(1, 7, wy + self._selected + 3, wx + 7, initial_txt)
+                if value != self._values[self._selected]:
+                    action = ['write_registers', self._selected, [value]]
+            except ValueError:
+                pass
+        self._draw_selection()
+        return action
+    def hide_selection(self, hide = True):
+        self._selection_visible = not hide
     def set_data(self, values):
+        self._values = values
         super().set_data(self._format_table_data(
             values[:self._counter_count],
             values[self._counter_count:]))
+        self._draw_selection()
 
 def show_dialog(parent, title, msg):
     lines = msg.split('\n')
@@ -255,6 +322,15 @@ def _configure_curses(stdscr):
     stdscr.timeout(50)
     curses.curs_set(0)
 
+class Circular(list):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.i = 0
+    def current(self):
+        return self[self.i]
+    def next(self):
+        self.i = (self.i + 1) % len(self)
+
 def tui_main(stdscr):
     # This prevents arduino autoreset. It does not work on the first call
     # because it doesn't give time to the Arduino program to
@@ -265,6 +341,7 @@ def tui_main(stdscr):
     _configure_curses(stdscr)
     coil_table = CoilTable()
     register_table = RegisterTable()
+    tables = Circular([coil_table, register_table])
     _center(stdscr, coil_table, register_table)
     client = ModbusSerialClient(
         method = "rtu",
@@ -295,17 +372,23 @@ def tui_main(stdscr):
         panel.update_panels()
         curses.doupdate()
         ch = stdscr.getch()
-        action = coil_table.handle_ch(ch)
+        action = None
         if ch == -1:
             continue
         if ch == ord('q'):
             return
+        elif ch == ord('\t'):
+            tables.current().hide_selection(True)
+            tables.next()
+            tables.current().hide_selection(False)
         elif ch == ord('h'):
             show_dialog(stdscr, 'Help', HELP_MSG)
         elif ch == curses.KEY_RESIZE:
             stdscr.clear()
             stdscr.border(0)
             _center(stdscr, coil_table, register_table)
+        else:
+            action = tables.current().handle_ch(ch)
         tl_attr = curses.A_NORMAL
         if action:
             cmd = action[0]
@@ -316,6 +399,13 @@ def tui_main(stdscr):
                 if result.function_code & 0x80:
                     tl_attr = COLOR_WHITE_ON_RED|curses.A_BOLD
                 read_op = READ_COILS
+            if cmd == 'write_registers':
+                cmd, addr, words = action
+                result = client.write_registers(addr, words, unit=UNIT_ID)
+                tl_msg = 'write_registers(0x%04x, %s, unit=0x%x) -> %s'%(addr, words, UNIT_ID, result)
+                if result.function_code & 0x80:
+                    tl_attr = COLOR_WHITE_ON_RED|curses.A_BOLD
+                read_op = READ_COUNTERS
             else:
                 tl_msg = str(action)
         else:
