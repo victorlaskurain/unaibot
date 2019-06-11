@@ -213,6 +213,11 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     return true;
 }
 
+bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t v)
+{
+    return false;
+}
+
 void vla::pdu_handler::operator()()
 {
     adc_set_value_msg_t adc_msg;
@@ -232,14 +237,19 @@ void vla::pdu_handler::operator()()
     ptxx_end();
 }
 
-bool vla::pdu_handler::execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words)
+constexpr uint16_t TC2_CONFIG_ADDR = 0x0008;
+static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
+
+bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *word)
 {
-    for (uint16_t i = 0; i < register_count; ++i, ++address) {
-        if (address >= 0 && address < uint8_t(adc_id_t::ADC_MAX)) {
-            words[i] = adc.get_value(adc_id_t(address));
-        } else {
-            words[i] = i * 16;
-        }
+    if (address < uint8_t(adc_id_t::ADC_MAX)) {
+        *word = adc.get_value(adc_id_t(address));
+        return true;
     }
+    if (TC2_CONFIG_ADDR == address) {
+        *word = 0xff;
+        return true;
+    }
+    *word = address * 16 + 1;
     return true;
 }

@@ -131,9 +131,14 @@ namespace vla {
         {
             return false;
         }
-        bool execute_read_registers(uint16_t address, uint16_t register_count, uint8_t *byte_count, uint16_t *words)
+        bool execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words)
         {
-            return false;
+            for (uint16_t i = 0; i < register_count; ++i) {
+                if (!self().execute_read_single_register(address + i, &words[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
         bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
         {
@@ -148,9 +153,20 @@ namespace vla {
         }
         bool execute_write_registers(uint16_t address, uint16_t *words, uint8_t word_count)
         {
-            return false;
+            for (uint16_t i = 0; i < word_count; ++i) {
+                if (!self().execute_write_single_register(
+                        address + i,
+                        words[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
         bool execute_write_single_coil(uint16_t address, bool vparam)
+        {
+            return false;
+        }
+        bool execute_write_single_register(uint16_t address, uint16_t v)
         {
             return false;
         }
@@ -312,7 +328,7 @@ namespace vla {
                 make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
                 return;
             }
-            uint16_t *words = (uint16_t*)&reply.buffer[3];
+            uint16_t *words      = (uint16_t*)&reply.buffer[3];
             if (self().execute_read_registers(address, register_count, words)) {
                 for (uint16_t i = 0; i < register_count; ++i) {
                     words[i] = flip_endianess(words[i]);
@@ -366,6 +382,9 @@ namespace vla {
             if (!self().is_write_registers_valid_data_value(register_count, byte_count)) {
                 make_exception_reply(rtu_exception_code::ILLEGAL_DATA_VALUE, indication, reply);
                 return;
+            }
+            for (uint16_t i = 0; i < register_count; ++i) {
+                words[i] = flip_endianess(words[i]);
             }
             if (!self().execute_write_registers(address, words, register_count)) {
                 make_exception_reply(rtu_exception_code::SERVER_DEVICE_FAILURE, indication, reply);

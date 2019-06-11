@@ -44,17 +44,14 @@ namespace vla {
         // member functions protected and callable from the parent.
         friend class pdu_handler_base<pdu_handler>;
     protected:
-        bool execute_read_registers(uint16_t address, uint16_t register_count, uint16_t *words);
+        bool execute_read_single_register(uint16_t address, uint16_t *word);
         bool execute_read_single_coil(uint16_t address, bool *bit_value);
-        bool execute_write_registers(uint16_t address, uint16_t *words, uint8_t word_count)
-        {
-            return true;
-        }
         bool is_write_registers_supported()
         {
             return true;
         }
         bool execute_write_single_coil(uint16_t address, bool v);
+        bool execute_write_single_register(uint16_t address, uint16_t v);
         bool is_read_coils_supported()
         {
             return true;
