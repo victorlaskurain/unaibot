@@ -145,6 +145,10 @@ namespace vla {
                 pin_t<ctrl_reg_a, 1>::clear();
             }
         }
+        clock_source get_clock()
+        {
+            return clock_source(ctrl_reg_b::ref());
+        }
         void set_clock(clock_source cs)
         {
             ctrl_reg_b::ref() = static_cast<uint8_t>(cs);
@@ -240,6 +244,14 @@ namespace vla {
         inline ~cm_unit()
         {
             set_mode(cm_mode::DISCONNECTED);
+        }
+        inline clock_source get_clock()
+        {
+            return timer.get_clock();
+        }
+        inline cm_mode get_mode()
+        {
+            return cm_mode((ctrl_reg::ref() >> cm_traits::bit0) & 0x03);
         }
         inline void set_cm_handler(cm_handler_t f, void* data = nullptr)
         {

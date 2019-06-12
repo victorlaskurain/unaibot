@@ -138,13 +138,14 @@ finally PORTC.
 |------+------------|
 | addr | name       |
 |------+------------|
-| 0000 | COUNTER00  |
-| 0001 | COUNTER01  |
+| 0000 | ANALOGIN00 |
+| 0001 | ANALOGIN01 |
 |  ... | ...        |
-| 0017 | COUNTER23  |
+| 0007 | ANALOGIN07 |
+| 0008 | TC2CONF    |
 |  ... | ...        |
-| 0020 | ANALOGIN00 |
-| 0037 | ANALOGIN23 |
+| 0010 | COUNTER00  |
+| 0015 | COUNTER15  |
 |  ... | ...        |
 | 0100 | USER DATA  |
 |------+------------|
@@ -155,3 +156,29 @@ finally PORTC.
   type of synchronization implemented.
 
 - ANALOGINnn: current analog value of the nn pin.
+
+- TC2CONF: bit field to configure the timer counter unit 2.
+
+** TC2CONF
+
+|------------------|
+| HI BYTE LOW BYTE |
+| 7654321076543210 |
+|------------------|
+| __MM_SSSDDDDDDDD |
+|------------------|
+
+- D: duty cycle
+- S: prescaler selection
+  - 0: STOP
+  - 1: PRESCALE_1
+  - 2: PRESCALE_8
+  - 3: PRESCALE_32
+  - 4: PRESCALE_64
+  - 5: PRESCALE_128
+  - 6: PRESCALE_256
+  - 7: PRESCALE_1024
+- M: mode
+  - 0: DISCONNECTED
+  - 2: phase correct PWM non inverting
+  - 3: phase correct PWM non inverting
