@@ -272,6 +272,12 @@ class RegisterTable(Table):
                     action = ['write_registers', self._selected, [value]]
             except ValueError:
                 pass
+        elif key == ord('+'):
+            action = ['write_registers', self._selected, [self._values[self._selected] + 1]]
+            pass
+        elif key == ord('-'):
+            action = ['write_registers', self._selected, [self._values[self._selected] - 1]]
+            pass
         self._draw_selection()
         return action
     def hide_selection(self, hide = True):
