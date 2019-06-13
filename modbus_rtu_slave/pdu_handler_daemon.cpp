@@ -221,38 +221,74 @@ static vla::cm_unit_2B::timer_t pwm_timer2(vla::tc_mode::PHASE_CORRECT_PWM, vla:
 static vla::cm_unit_2B          pwm2b(pwm_timer2, vla::cm_mode::DISCONNECTED);
 static vla::cm_unit_2A          pwm2a(pwm_timer2, vla::cm_mode::DISCONNECTED);
 
+/**
+ * Utility class to parse/generate words containing TC configuration
+ * messages.
+ */
+class tc2_config
+{
+    const uint8_t _duty;
+    const uint8_t _clock;
+    const uint8_t _mode;
+public:
+    tc2_config(uint8_t d, uint8_t c, uint8_t m):
+        _duty(d), _clock(c), _mode(m){}
+    tc2_config(uint8_t d, vla::clock_source_2 c, vla::cm_mode m)
+        :tc2_config(uint8_t(d), uint8_t(c), uint8_t(m)){}
+    tc2_config(uint16_t v):
+        _duty(v & 0xff), _clock((v >>  8) & 0x7), _mode((v >> 12) & 0x3){}
+    uint16_t as_word() const
+    {
+        return _duty | (_clock << 8) | (_mode << 12);
+    }
+    bool is_valid() const
+    {
+        return !(_mode == 1 || _clock > 7);
+    }
+    uint8_t duty() const
+    {
+        return _duty;
+    }
+    vla::cm_mode mode() const
+    {
+        return vla::cm_mode(_mode);
+    }
+    vla::clock_source_2 clock() const
+    {
+        return vla::clock_source_2(_clock);
+    }
+};
+
 bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t v)
 {
     if (TC2A_CONFIG_ADDR == address) {
         // 0x277f -> non inverting pcpwm, 1024 prescaler, half duty
-        const uint8_t duty  = v & 0xff;
-        const uint8_t clock = (v >>  8) & 0x7;
-        const uint8_t mode  = (v >> 12) & 0x3;
-        if (mode == 1 || clock > 7) {
+        // 0x270c -> non inverting pcpwm, servo center
+        const tc2_config conf{v};
+        if (!conf.is_valid()) {
             return false;
         }
-        if (mode != 0) {
+        if (conf.mode() != vla::cm_mode::DISCONNECTED) {
             vla::PORTB3_t::set_mode_output();
         }
-        pwm2a.set_mode(vla::cm_mode(mode));
-        pwm2a.set_output_compare(duty);
-        pwm2a.set_clock(vla::clock_source_2(clock));
+        pwm2a.set_mode(conf.mode());
+        pwm2a.set_output_compare(conf.duty());
+        pwm2a.set_clock(conf.clock());
         return true;
     }
     if (TC2B_CONFIG_ADDR == address) {
         // 0x277f -> non inverting pcpwm, 1024 prescaler, half duty
-        const uint8_t duty  = v & 0xff;
-        const uint8_t clock = (v >>  8) & 0x7;
-        const uint8_t mode  = (v >> 12) & 0x3;
-        if (mode == 1 || clock > 7) {
+        // 0x270c -> non inverting pcpwm, servo center
+        const tc2_config conf{v};
+        if (!conf.is_valid()) {
             return false;
         }
-        if (mode != 0) {
+        if (conf.mode() != vla::cm_mode::DISCONNECTED) {
             vla::PORTD3_t::set_mode_output();
         }
-        pwm2b.set_mode(vla::cm_mode(mode));
-        pwm2b.set_output_compare(duty);
-        pwm2b.set_clock(vla::clock_source_2(clock));
+        pwm2b.set_mode(conf.mode());
+        pwm2b.set_output_compare(conf.duty());
+        pwm2b.set_clock(conf.clock());
         return true;
     }
     return false;
@@ -265,17 +301,17 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
         return true;
     }
     if (TC2A_CONFIG_ADDR == address) {
-        const uint8_t duty  = pwm2a.get_output_compare();
-        const uint8_t clock = uint8_t(pwm2a.get_clock());
-        const uint8_t mode  = uint8_t(pwm2a.get_mode());
-        *word = duty | (clock << 8) | (mode << 12);
+        *word = tc2_config(
+            pwm2a.get_output_compare(),
+            pwm2a.get_clock(),
+            pwm2a.get_mode()).as_word();
         return true;
     }
     if (TC2B_CONFIG_ADDR == address) {
-        const uint8_t duty  = pwm2b.get_output_compare();
-        const uint8_t clock = uint8_t(pwm2b.get_clock());
-        const uint8_t mode  = uint8_t(pwm2b.get_mode());
-        *word = duty | (clock << 8) | (mode << 12);
+        *word = tc2_config(
+            pwm2b.get_output_compare(),
+            pwm2b.get_clock(),
+            pwm2b.get_mode()).as_word();
         return true;
     }
     *word = 0;
