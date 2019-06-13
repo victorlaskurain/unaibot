@@ -230,14 +230,14 @@ def get_int(h=1, w=8, y=10, x=10, txt=''):
 class RegisterTable(Table):
     _counter_count   = 16
     _analog_in_count =  8
-    _tc_control_count = 1
+    _tc_control_count = 2
     _register_count = _counter_count + _analog_in_count + _tc_control_count
     def __init__(self):
         self._selection_visible = False
         self._selected     = 0
         self._addresses    = ['0x%04x'%i for i in range(self._register_count)]
         self._descriptions = ['ANALOGIN%02d'%i for i in range(self._analog_in_count)] + \
-                             ['TC2CONF'] + \
+                             ['TC2ACONF', 'TC2BCONF'] + \
                              ['COUNTER%02d' %i for i in range(self._counter_count)]
         super().__init__({
             'row_count': int(self._register_count),

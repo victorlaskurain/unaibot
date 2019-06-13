@@ -142,10 +142,11 @@ finally PORTC.
 | 0001 | ANALOGIN01 |
 |  ... | ...        |
 | 0007 | ANALOGIN07 |
-| 0008 | TC2CONF    |
+| 0008 | TC2ACONF   |
+| 0009 | TC2BCONF   |
 |  ... | ...        |
-| 0010 | COUNTER00  |
-| 0015 | COUNTER15  |
+| 000a | COUNTER00  |
+| 0016 | COUNTER15  |
 |  ... | ...        |
 | 0100 | USER DATA  |
 |------+------------|

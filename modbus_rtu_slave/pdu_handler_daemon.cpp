@@ -214,17 +214,32 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     return true;
 }
 
-constexpr uint16_t TC2_CONFIG_ADDR = 0x0008;
-static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
-
+constexpr uint16_t TC2A_CONFIG_ADDR = 0x0008;
+constexpr uint16_t TC2B_CONFIG_ADDR = 0x0009;
+static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2A_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
 static vla::cm_unit_2B::timer_t pwm_timer2(vla::tc_mode::PHASE_CORRECT_PWM, vla::clock_source_2::STOP);
 static vla::cm_unit_2B          pwm2b(pwm_timer2, vla::cm_mode::DISCONNECTED);
-// static vla::cm_unit_2B::timer_t pwm_timer2(vla::tc_mode::PHASE_CORRECT_PWM, vla::clock_source_2::PRESCALE_1024);
-// static vla::cm_unit_2B pwm2b(pwm_timer2, vla::cm_mode::PC_PWM_NON_INVERTING);
+static vla::cm_unit_2A          pwm2a(pwm_timer2, vla::cm_mode::DISCONNECTED);
 
 bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t v)
 {
-    if (TC2_CONFIG_ADDR == address) {
+    if (TC2A_CONFIG_ADDR == address) {
+        // 0x277f -> non inverting pcpwm, 1024 prescaler, half duty
+        const uint8_t duty  = v & 0xff;
+        const uint8_t clock = (v >>  8) & 0x7;
+        const uint8_t mode  = (v >> 12) & 0x3;
+        if (mode == 1 || clock > 7) {
+            return false;
+        }
+        if (mode != 0) {
+            vla::PORTB3_t::set_mode_output();
+        }
+        pwm2a.set_mode(vla::cm_mode(mode));
+        pwm2a.set_output_compare(duty);
+        pwm2a.set_clock(vla::clock_source_2(clock));
+        return true;
+    }
+    if (TC2B_CONFIG_ADDR == address) {
         // 0x277f -> non inverting pcpwm, 1024 prescaler, half duty
         const uint8_t duty  = v & 0xff;
         const uint8_t clock = (v >>  8) & 0x7;
@@ -249,7 +264,14 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
         *word = adc.get_value(adc_id_t(address));
         return true;
     }
-    if (TC2_CONFIG_ADDR == address) {
+    if (TC2A_CONFIG_ADDR == address) {
+        const uint8_t duty  = pwm2a.get_output_compare();
+        const uint8_t clock = uint8_t(pwm2a.get_clock());
+        const uint8_t mode  = uint8_t(pwm2a.get_mode());
+        *word = duty | (clock << 8) | (mode << 12);
+        return true;
+    }
+    if (TC2B_CONFIG_ADDR == address) {
         const uint8_t duty  = pwm2b.get_output_compare();
         const uint8_t clock = uint8_t(pwm2b.get_clock());
         const uint8_t mode  = uint8_t(pwm2b.get_mode());
