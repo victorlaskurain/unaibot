@@ -6,6 +6,7 @@
 #include "pdu_handler_base.hpp"
 #include "adc_daemon_queue.hpp"
 #include <vla/protothreads.hpp>
+#include <vla/timers.hpp>
 
 namespace vla {
 
@@ -38,6 +39,9 @@ namespace vla {
         transmission_queue_t &to_transmission_daemon_q;
         adc_queue_t &to_adc_q;
         buffer_msg_t buffer_msg = {};
+        cm_unit_2B::timer_t pwm_timer2;
+        cm_unit_2B          pwm2b;
+        cm_unit_2A          pwm2a;
         adc_state adc;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
@@ -94,7 +98,10 @@ namespace vla {
             adc_queue_t          &to_adc_q):
             handler_base(addr), in_q(in_q),
             to_transmission_daemon_q(to_transmission_daemon_q),
-            to_adc_q(to_adc_q)
+            to_adc_q(to_adc_q),
+            pwm_timer2(tc_mode::PHASE_CORRECT_PWM, clock_source_2::STOP),
+            pwm2b(pwm_timer2, cm_mode::DISCONNECTED),
+            pwm2a(pwm_timer2, cm_mode::DISCONNECTED)
         {}
         void operator()();
     };

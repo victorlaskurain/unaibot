@@ -217,9 +217,6 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
 constexpr uint16_t TC2A_CONFIG_ADDR = 0x0008;
 constexpr uint16_t TC2B_CONFIG_ADDR = 0x0009;
 static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2A_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
-static vla::cm_unit_2B::timer_t pwm_timer2(vla::tc_mode::PHASE_CORRECT_PWM, vla::clock_source_2::STOP);
-static vla::cm_unit_2B          pwm2b(pwm_timer2, vla::cm_mode::DISCONNECTED);
-static vla::cm_unit_2A          pwm2a(pwm_timer2, vla::cm_mode::DISCONNECTED);
 
 /**
  * Utility class to parse/generate words containing TC configuration
