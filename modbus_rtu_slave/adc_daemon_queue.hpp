@@ -24,8 +24,6 @@ namespace vla {
         void*          data;
     };
 
-    // implements a poor man's variant in order to express different
-    // message types in a safe and convenient way.
     class adc_msg_t
     {
     public:
