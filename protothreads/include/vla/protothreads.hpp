@@ -29,6 +29,11 @@ namespace vla {
     {
     protected:
         pt ctx{};
+    public:
+        ptxx_thread()                      = default;
+        ptxx_thread(ptxx_thread&&)         = default;
+        ptxx_thread(const ptxx_thread&)    = delete;
+        void operator=(const ptxx_thread&) = delete;
     };
 }
 
