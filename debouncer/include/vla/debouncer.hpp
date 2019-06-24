@@ -52,9 +52,9 @@ namespace vla {
         static constexpr size_t signal_count()
         {
             return 8 * (
+                sizeof (PORTD_t::ref()) +
                 sizeof (PORTB_t::ref()) +
-                sizeof (PORTC_t::ref()) +
-                sizeof (PORTD_t::ref()));
+                sizeof (PORTC_t::ref()));
         }
     protected:
         get_signal_policy_all_pins() = default;
@@ -64,17 +64,17 @@ namespace vla {
         {
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[0  + i].enabled) {
-                    signals[0  + i].read_value = bool(PORTB_t::pin_t::ref() & _BV(i));
+                    signals[0  + i].read_value = bool(PORTD_t::pin_t::ref() & _BV(i));
                 }
             }
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[8  + i].enabled) {
-                    signals[8  + i].read_value = bool(PORTC_t::pin_t::ref() & _BV(i));
+                    signals[8  + i].read_value = bool(PORTB_t::pin_t::ref() & _BV(i));
                 }
             }
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[16 + i].enabled) {
-                    signals[16 + i].read_value = bool(PORTD_t::pin_t::ref() & _BV(i));
+                    signals[16 + i].read_value = bool(PORTC_t::pin_t::ref() & _BV(i));
                 }
             }
         }
@@ -171,6 +171,14 @@ namespace vla {
         {
             return _counters;
         }
+        uint16_t get_counter_value(uint8_t i_signal)
+        {
+            return _counters[i_signal];
+        }
+        void set_value(uint8_t i_signal, uint16_t v)
+        {
+            _counters[i_signal] = v;
+        }
     };
 
     template <class concrete,
@@ -183,7 +191,9 @@ namespace vla {
                            public edge_policy,
                            public frequency_policy<concrete>
     {
+    public:
         static constexpr auto signal_count = get_signal_policy::signal_count();
+    private:
         signal_state signals[get_signal_policy::signal_count()];
     public:
         debouncer_base() = default;
@@ -209,6 +219,16 @@ namespace vla {
         bool is_enabled(uint8_t i_signal) const
         {
             return signals[i_signal].enabled;
+        }
+        bool is_fall_edge(uint8_t i_signal) const
+        {
+            return 0 == signals[i_signal].current_value &&
+                   1 == signals[i_signal].previous_value;
+        }
+        bool is_raise_edge(uint8_t i_signal) const
+        {
+            return 1 == signals[i_signal].current_value &&
+                   0 == signals[i_signal].previous_value;
         }
         void set_enabled(uint8_t i_signal, bool enable)
         {
