@@ -4,10 +4,14 @@
 #include <vla/tagged_union_queue.hpp>
 #include "buffer_msg.hpp"
 #include "adc_set_value_msg.hpp"
+#include "counters_set_value_msg.hpp"
 
 namespace vla {
 
-    using pdu_handler_msg_t   = tagged_union<buffer_msg_t, adc_set_value_msg_t>;
+    using pdu_handler_msg_t   = tagged_union<
+        buffer_msg_t,
+        adc_set_value_msg_t,
+        counters_set_value_msg_t>;
     using pdu_handler_queue_t = basic_tagged_union_queue<pdu_handler_msg_t, 50, Cli, NopLock>;
 
 }

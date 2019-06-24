@@ -5,6 +5,7 @@
 #include "pdu_handler_daemon_queue.hpp"
 #include "pdu_handler_base.hpp"
 #include "adc_daemon_queue.hpp"
+#include "counters_daemon_queue.hpp"
 #include <vla/protothreads.hpp>
 #include <vla/timers.hpp>
 
@@ -33,16 +34,42 @@ namespace vla {
         }
     };
 
+    class counters_state
+    {
+        uint32_t enabled = 0;
+        uint16_t values[uint8_t(counter_id_t::COUNTER_MAX)] = {0};
+        static_assert(sizeof(uint32_t) * 8 >= uint8_t(counter_id_t::COUNTER_MAX), "Too many counters.");
+    public:
+        uint16_t get_value(counter_id_t id)
+        {
+            return values[uint8_t(id)];
+        }
+        bool is_enabled(counter_id_t id)
+        {
+            return enabled & to_bit_mask(id);
+        }
+        void set_enabled(counter_id_t id, bool enable)
+        {
+            enabled = (enabled & ~to_bit_mask(id)) | to_bit_mask(id, enable);
+        }
+        void set_value(counter_id_t id, uint16_t v)
+        {
+            values[uint8_t(id)] = v;
+        }
+    };
+
     class pdu_handler : public ptxx_thread, public pdu_handler_base<pdu_handler>
     {
-        pdu_handler_queue_t &in_q;
+        pdu_handler_queue_t  &in_q;
         transmission_queue_t &to_transmission_daemon_q;
-        adc_queue_t &to_adc_q;
+        adc_queue_t          &to_adc_q;
+        counters_queue_t     &to_counter_daemon_q;
         buffer_msg_t buffer_msg = {};
         cm_unit_2B::timer_t pwm_timer2;
         cm_unit_2B          pwm2b;
         cm_unit_2A          pwm2a;
         adc_state adc;
+        counters_state counters;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
         // member functions protected and callable from the parent.
@@ -70,13 +97,11 @@ namespace vla {
         }
         bool is_read_registers_valid_data_address(uint16_t addr, uint16_t count)
         {
-            return (addr >= 0x0000 && addr + count < 0x0030);   // user data space
+            return (addr >= 0x0000 && addr + count < 0x0030);
         }
         bool is_write_registers_valid_data_address(uint16_t addr, uint16_t count)
         {
-            return (addr >= 0x0000 && addr + count < 0x0018) || // counter space
-                   (addr >= 0x0020 && addr + count < 0x0038) || // analog in space
-                   (addr >= 0x0100 && addr + count < 0x0020);   // user data space
+            return (addr >= 0x0000 && addr + count < 0x0030);
         }
         bool is_write_coils_supported()
         {
@@ -95,10 +120,13 @@ namespace vla {
             rtu_address           addr,
             pdu_handler_queue_t  &in_q,
             transmission_queue_t &to_transmission_daemon_q,
-            adc_queue_t          &to_adc_q):
+            adc_queue_t          &to_adc_q,
+            counters_queue_t     &to_counter_daemon_q
+            ):
             handler_base(addr), in_q(in_q),
             to_transmission_daemon_q(to_transmission_daemon_q),
             to_adc_q(to_adc_q),
+            to_counter_daemon_q(to_counter_daemon_q),
             pwm_timer2(tc_mode::PHASE_CORRECT_PWM, clock_source_2::STOP),
             pwm2b(pwm_timer2, cm_mode::DISCONNECTED),
             pwm2a(pwm_timer2, cm_mode::DISCONNECTED)

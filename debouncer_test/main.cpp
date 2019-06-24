@@ -86,15 +86,15 @@ static void write_if_pin_value_changed(const signal_debouncer &csd)
     static uint8_t value     = -1;
     if (PORTB0_t::get() != pin_value || (uint8_t)csd.get_value(0) != value) {
         pin_value = PORTB0_t::get();
-        value     = (uint8_t)csd.get_value(0);
+        value     = (uint8_t)csd.get_value(8);
         write(ser, "\r\nPINB0    : ");
         write_hex(ser, (uint8_t)(PORTB_t::pin_t::ref() & _BV(0)));
         write(ser, "\r\nVALUE    : ");
-        write_hex(ser, (uint8_t)csd.get_value(0));
+        write_hex(ser, (uint8_t)csd.get_value(8));
         write(ser, "\r\nPIN VALUE: ");
-        write_hex(ser, (uint8_t)csd.get_value(0));
+        write_hex(ser, (uint8_t)csd.get_value(8));
         write(ser, "\r\nENABLED  : ");
-        write_hex(ser, (uint8_t)csd.is_enabled(0));
+        write_hex(ser, (uint8_t)csd.is_enabled(8));
         write(ser, "\r\nTICKS    : ");
         write_hex(ser, ticks);
         write_line(ser, "");

@@ -1,4 +1,5 @@
 #include "pdu_handler_daemon.hpp"
+#include "counters_daemon_queue.hpp"
 #include <vla/registers.hpp>
 #include <vla/timers.hpp>
 #include <util/crc16.h>
@@ -109,13 +110,13 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
         *bit_value = is_input_mode<PORTC_t>(bit) && get_bit<PORTC_t>(bit);
         break;
     case EC_PORTD:
-        // :TODO:
+        *bit_value = counters.is_enabled(counter_id_t( 0 + bit));
         break;
     case EC_PORTB:
-        // :TODO:
+        *bit_value = counters.is_enabled(counter_id_t( 8 + bit));
         break;
     case EC_PORTC:
-        // :TODO:
+        *bit_value = counters.is_enabled(counter_id_t(16 + bit));
         break;
     case PI_PORTD:
         *bit_value = get_bit<PORTD_t::pin_t>(bit);
@@ -182,14 +183,33 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
         set_bit<PORTC_t>(bit, v);
         break;
     case EC_PORTD:
-        // :TODO:
-        break;
     case EC_PORTB:
-        // :TODO:
-        break;
     case EC_PORTC:
-        // :TODO:
+    {
+        uint8_t counter_offset;
+        switch (coil_record_number_t(registry)) {
+        case EC_PORTD:
+            counter_offset =  0 + bit;
+            break;
+        case EC_PORTB:
+            counter_offset =  8 + bit;
+            break;
+        case EC_PORTC:
+            counter_offset = 16 + bit;
+            break;
+        default:
+            // never happens, just keeping the compiler from spitting out warnings
+            break;
+        }
+        counter_id_t counter_id = counter_id_t(counter_offset);
+        if (v) {
+            to_counter_daemon_q.push(counters_daemon_msg_t{counter_id, in_q});
+        } else {
+            to_counter_daemon_q.push(counters_daemon_msg_t::msg_disable(counter_id));
+            counters.set_enabled(counter_id, 0);
+        }
         break;
+    }
     case PO_PORTD:
         if (is_input_mode<PORTD_t>(bit)) {
             return false;
@@ -256,6 +276,10 @@ public:
     }
 };
 
+constexpr uint16_t COUNTER_ADDR_BEGIN = 0x000a;
+constexpr uint16_t COUNTER_ADDR_END   =
+COUNTER_ADDR_BEGIN + uint8_t(vla::counter_id_t::COUNTER_MAX);
+
 bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t v)
 {
     if (TC2A_CONFIG_ADDR == address) {
@@ -288,6 +312,12 @@ bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t 
         pwm2b.set_clock(conf.clock());
         return true;
     }
+    if (address >= COUNTER_ADDR_BEGIN && address < COUNTER_ADDR_END) {
+        counter_id_t cid = counter_id_t(address - COUNTER_ADDR_BEGIN);
+        counters.set_value(cid, v);
+        to_counter_daemon_q.push(counters_daemon_msg_t{cid, v});
+        return true;
+    }
     return false;
 }
 
@@ -311,13 +341,18 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
             pwm2b.get_mode()).as_word();
         return true;
     }
+    if (address >= COUNTER_ADDR_BEGIN && address < COUNTER_ADDR_END) {
+        *word = counters.get_value(counter_id_t(address - COUNTER_ADDR_BEGIN));
+        return true;
+    }
     *word = 0;
     return true;
 }
 
 void vla::pdu_handler::operator()()
 {
-    adc_set_value_msg_t adc_msg;
+    adc_set_value_msg_t      adc_msg;
+    counters_set_value_msg_t counters_msg;
     ptxx_begin();
     while (true) {
         ptxx_wait(!in_q.empty());
@@ -329,6 +364,9 @@ void vla::pdu_handler::operator()()
         } else if (in_q.pop(adc_msg)) {
             adc.set_enabled(adc_msg.id, true);
             adc.set_value(adc_msg.id, adc_msg.value);
+        } else if (in_q.pop(counters_msg)) {
+            counters.set_enabled(counters_msg.id, true);
+            counters.set_value(counters_msg.id, counters_msg.value);
         }
     }
     ptxx_end();

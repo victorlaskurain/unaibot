@@ -228,9 +228,9 @@ def get_int(h=1, w=8, y=10, x=10, txt=''):
         return int(txt)
 
 class RegisterTable(Table):
-    _counter_count   = 16
     _analog_in_count =  8
     _tc_control_count = 2
+    _counter_count   = 16
     _register_count = _counter_count + _analog_in_count + _tc_control_count
     def __init__(self):
         self._selection_visible = False
@@ -369,12 +369,12 @@ def tui_main(stdscr):
         if read_op == READ_COILS:
             coils = client.read_coils(0x0000, 0xd8, unit=UNIT_ID).bits
         elif read_op == READ_COUNTERS:
-            counters = client.read_holding_registers(0x0000, 16, unit=UNIT_ID).registers
+            counters = client.read_holding_registers(0x000a, 16, unit=UNIT_ID).registers
         elif read_op == READ_ANALOG:
-            analog_values = client.read_holding_registers(0x0010,  8, unit=UNIT_ID).registers
+            analog_values = client.read_holding_registers(0x0000, 10, unit=UNIT_ID).registers
         read_op = (read_op + 1) % READ_OP_COUNT
         coil_table.set_data(coils)
-        registers     = counters + analog_values
+        registers     = analog_values + counters
         register_table.set_data(registers)
         stdscr.touchwin()
         panel.update_panels()
