@@ -201,7 +201,7 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
             // never happens, just keeping the compiler from spitting out warnings
             break;
         }
-        counter_id_t counter_id = counter_id_t(counter_offset);
+        const counter_id_t counter_id = counter_id_t(counter_offset);
         if (v) {
             to_counter_daemon_q.push(counters_daemon_msg_t{counter_id, in_q});
         } else {
@@ -234,8 +234,12 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     return true;
 }
 
-constexpr uint16_t TC2A_CONFIG_ADDR = 0x0008;
-constexpr uint16_t TC2B_CONFIG_ADDR = 0x0009;
+constexpr uint16_t TC2A_CONFIG_ADDR   = 0x0008;
+constexpr uint16_t TC2B_CONFIG_ADDR   = 0x0009;
+constexpr uint16_t COUNTER_ADDR_BEGIN = 0x000a;
+constexpr uint16_t COUNTER_ADDR_END   =
+COUNTER_ADDR_BEGIN + uint8_t(vla::counter_id_t::COUNTER_MAX);
+
 static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2A_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
 
 /**
@@ -275,10 +279,6 @@ public:
         return vla::clock_source_2(_clock);
     }
 };
-
-constexpr uint16_t COUNTER_ADDR_BEGIN = 0x000a;
-constexpr uint16_t COUNTER_ADDR_END   =
-COUNTER_ADDR_BEGIN + uint8_t(vla::counter_id_t::COUNTER_MAX);
 
 bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t v)
 {
