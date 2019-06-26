@@ -138,15 +138,15 @@ class CoilTable(Table):
         '0x00A0', '0x00A8', '0x00B0', '0x00B8', '0x00C0',
         '0x00C8', '0x00D0']
     _descriptions = [
-        'AU  PORTD (RO)  ', '    PORTB (RO)  ', '    PORTC (RO)  ',
-        'AI  PORTD (RO)  ', '    PORTB (RO)  ', '    PORTC (RO)  ',
-        'AO  PORTD (RO)  ', '    PORTB (RO)  ', '    PORTC (RO)  ',
-        'IOD PORTD (0=IN)', '    PORTB (0=IN)', '    PORTC (0=IN)',
-        'IOM PORTD (1=AN)', '    PORTB (1=AN)', '    PORTC (1=AN)',
-        'EIP PORTD       ', '    PORTB       ', '    PORTC       ',
-        'EC  PORTD       ', '    PORTB       ', '    PORTC       ',
-        'PI  PORTD (RO)  ', '    PORTB (RO)  ', '    PORTC (RO)  ',
-        'PO  PORTD       ', '    PORTB       ', '    PORTC       ',
+        'AU  PORTB (RO)  ', '    PORTC (RO)  ', '    PORTD (RO)  ',
+        'AI  PORTB (RO)  ', '    PORTC (RO)  ', '    PORTD (RO)  ',
+        'AO  PORTB (RO)  ', '    PORTC (RO)  ', '    PORTD (RO)  ',
+        'IOD PORTB (0=IN)', '    PORTC (0=IN)', '    PORTD (0=IN)',
+        'IOM PORTB (1=AN)', '    PORTC (1=AN)', '    PORTD (1=AN)',
+        'EIP PORTB       ', '    PORTC       ', '    PORTD       ',
+        'EC  PORTB       ', '    PORTC       ', '    PORTD       ',
+        'PI  PORTB (RO)  ', '    PORTC (RO)  ', '    PORTD (RO)  ',
+        'PO  PORTB       ', '    PORTC       ', '    PORTD       ',
     ]
     _coil_count = len(_addresses) * 8
     def __init__(self):
@@ -233,15 +233,19 @@ class RegisterTable(Table):
     _counter_count   = 16
     _register_count = _counter_count + _analog_in_count + _tc_control_count
     def __init__(self):
+        def _pins():
+            for port in ('B', 'C', 'D'):
+                for pin in range(8):
+                    yield '%s%s'%(port, pin)
         self._selection_visible = False
         self._selected     = 0
         self._addresses    = ['0x%04x'%i for i in range(self._register_count)]
         self._descriptions = ['ANALOGIN%02d'%i for i in range(self._analog_in_count)] + \
                              ['TC2ACONF', 'TC2BCONF'] + \
-                             ['COUNTER%02d' %i for i in range(self._counter_count)]
+                             ['COUNTER%02d (%s)'%(i, pin) for i, pin in zip(range(self._counter_count), _pins())]
         super().__init__({
             'row_count': int(self._register_count),
-            'col_formats': ['{:6}', '{:6}', '{:11}'],
+            'col_formats': ['{:6}', '{:6}', '{:14}'],
             'header': ['ADDR\n', 'VALUE', 'DESCRIPTION']
         }, data = [0 for i in range(self._register_count)])
     def _clear_selection(self):
