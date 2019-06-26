@@ -66,8 +66,8 @@ To be implemented
 
 ** Configuration space
 
-The pins are numbered from 0 to 23. First PORTD, then PORTB and
-finally PORTC.
+The pins are numbered from 0 to 23. First PORTB, then PORTC and
+finally PORTD.
 
 |------+-------+-------+-------+-------+-------+-------+-------+-------|
 |      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |

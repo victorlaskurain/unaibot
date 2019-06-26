@@ -52,9 +52,9 @@ namespace vla {
         static constexpr size_t signal_count()
         {
             return 8 * (
-                sizeof (PORTD_t::ref()) +
                 sizeof (PORTB_t::ref()) +
-                sizeof (PORTC_t::ref()));
+                sizeof (PORTC_t::ref()) +
+                sizeof (PORTD_t::ref()));
         }
     protected:
         get_signal_policy_all_pins() = default;
@@ -64,17 +64,17 @@ namespace vla {
         {
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[0  + i].enabled) {
-                    signals[0  + i].read_value = bool(PORTD_t::pin_t::ref() & _BV(i));
+                    signals[0  + i].read_value = bool(PORTB_t::pin_t::ref() & _BV(i));
                 }
             }
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[8  + i].enabled) {
-                    signals[8  + i].read_value = bool(PORTB_t::pin_t::ref() & _BV(i));
+                    signals[8  + i].read_value = bool(PORTC_t::pin_t::ref() & _BV(i));
                 }
             }
             for (int8_t i = 0; i < 8; ++i) {
                 if (signals[16 + i].enabled) {
-                    signals[16 + i].read_value = bool(PORTC_t::pin_t::ref() & _BV(i));
+                    signals[16 + i].read_value = bool(PORTD_t::pin_t::ref() & _BV(i));
                 }
             }
         }

@@ -6,33 +6,33 @@
 
 namespace vla {
     enum coil_record_number_t {
-        AU_PORTD,
         AU_PORTB,
         AU_PORTC,
-        AI_PORTD,
+        AU_PORTD,
         AI_PORTB,
         AI_PORTC,
-        AO_PORTD,
+        AI_PORTD,
         AO_PORTB,
         AO_PORTC,
-        IOD_PORTD,
+        AO_PORTD,
         IOD_PORTB,
         IOD_PORTC,
-        IOM_PORTD,
+        IOD_PORTD,
         IOM_PORTB,
         IOM_PORTC,
-        EIP_PORTD,
+        IOM_PORTD,
         EIP_PORTB,
         EIP_PORTC,
-        EC_PORTD,
+        EIP_PORTD,
         EC_PORTB,
         EC_PORTC,
-        PI_PORTD,
+        EC_PORTD,
         PI_PORTB,
         PI_PORTC,
-        PO_PORTD,
+        PI_PORTD,
         PO_PORTB,
         PO_PORTC,
+        PO_PORTD,
     };
     template<typename registry_t>
     bool get_bit(uint8_t bit)
@@ -109,13 +109,13 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
     case EIP_PORTC:
         *bit_value = is_input_mode<PORTC_t>(bit) && get_bit<PORTC_t>(bit);
         break;
-    case EC_PORTD:
+    case EC_PORTB:
         *bit_value = counters.is_enabled(counter_id_t( 0 + bit));
         break;
-    case EC_PORTB:
+    case EC_PORTC:
         *bit_value = counters.is_enabled(counter_id_t( 8 + bit));
         break;
-    case EC_PORTC:
+    case EC_PORTD:
         *bit_value = counters.is_enabled(counter_id_t(16 + bit));
         break;
     case PI_PORTD:
@@ -188,13 +188,13 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     {
         uint8_t counter_offset;
         switch (coil_record_number_t(registry)) {
-        case EC_PORTD:
+        case EC_PORTB:
             counter_offset =  0 + bit;
             break;
-        case EC_PORTB:
+        case EC_PORTC:
             counter_offset =  8 + bit;
             break;
-        case EC_PORTC:
+        case EC_PORTD:
             counter_offset = 16 + bit;
             break;
         default:
