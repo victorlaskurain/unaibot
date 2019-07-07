@@ -234,11 +234,12 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     return true;
 }
 
-constexpr uint16_t TC2A_CONFIG_ADDR   = 0x0008;
-constexpr uint16_t TC2B_CONFIG_ADDR   = 0x0009;
-constexpr uint16_t COUNTER_ADDR_BEGIN = 0x000a;
-constexpr uint16_t COUNTER_ADDR_END   =
-COUNTER_ADDR_BEGIN + uint8_t(vla::counter_id_t::COUNTER_MAX);
+constexpr uint16_t TC2A_CONFIG_ADDR     = 0x0008;
+constexpr uint16_t TC2B_CONFIG_ADDR     = 0x0009;
+constexpr uint16_t COUNTER_ADDR_BEGIN   = 0x000a;
+constexpr uint16_t COUNTER_ADDR_END     =
+    COUNTER_ADDR_BEGIN + uint8_t(vla::counter_id_t::COUNTER_MAX);
+constexpr uint16_t USER_DATA_ADDR_BEGIN = COUNTER_ADDR_END;
 
 static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2A_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
 
@@ -318,6 +319,10 @@ bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t 
         to_counter_daemon_q.push(counters_daemon_msg_t{cid, v});
         return true;
     }
+    if (address >= USER_DATA_ADDR_BEGIN && address < USER_DATA_ADDR_BEGIN + user_data.size) {
+        *user_data.data[address - USER_DATA_ADDR_BEGIN] = v;
+        return true;
+    }
     return false;
 }
 
@@ -343,6 +348,10 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
     }
     if (address >= COUNTER_ADDR_BEGIN && address < COUNTER_ADDR_END) {
         *word = counters.get_value(counter_id_t(address - COUNTER_ADDR_BEGIN));
+        return true;
+    }
+    if (address >= USER_DATA_ADDR_BEGIN && address < USER_DATA_ADDR_BEGIN + user_data.size) {
+        *word = *user_data.data[address - USER_DATA_ADDR_BEGIN];
         return true;
     }
     *word = 0;

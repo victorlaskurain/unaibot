@@ -58,6 +58,14 @@ namespace vla {
         }
     };
 
+    struct register_values
+    {
+        uint16_t **data = nullptr;
+        uint16_t size   = 0;
+        register_values(uint16_t **data, uint16_t size):data(data), size(size){}
+        register_values() = default;
+    };
+
     class pdu_handler : public ptxx_thread, public pdu_handler_base<pdu_handler>
     {
         pdu_handler_queue_t  &in_q;
@@ -70,6 +78,7 @@ namespace vla {
         cm_unit_2A          pwm2a;
         adc_state adc;
         counters_state counters;
+        register_values user_data;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
         // member functions protected and callable from the parent.
@@ -83,6 +92,10 @@ namespace vla {
         }
         bool execute_write_single_coil(uint16_t address, bool v);
         bool execute_write_single_register(uint16_t address, uint16_t v);
+        register_values get_user_data()
+        {
+            return user_data;
+        }
         bool is_read_coils_supported()
         {
             return true;
@@ -132,6 +145,10 @@ namespace vla {
             pwm2a(pwm_timer2, cm_mode::DISCONNECTED)
         {}
         void operator()();
+        void set_user_data(register_values ud)
+        {
+            user_data = ud;
+        }
     };
 
 }

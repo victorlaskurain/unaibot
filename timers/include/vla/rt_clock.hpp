@@ -2,6 +2,7 @@
 #define VLA_RT_CLOCK_HPP
 
 #include <vla/timers.hpp>
+#include <vla/cli_sei.hpp>
 #include <avr/interrupt.h>
 
 namespace vla {
@@ -58,10 +59,24 @@ namespace vla {
     {
         uint32_t us;
         explicit timestamp_us(uint32_t us):us(us){}
-        timestamp_us operator +=(period_us delta)
+        timestamp_us(const timestamp_us &other):us(other.us)
+        {}
+        timestamp_us(const volatile timestamp_us &other):us(other.us)
+        {}
+        timestamp_us& operator+=(period_us delta)
         {
             us += delta.us;
             return *this;
+        }
+        volatile timestamp_us& operator+=(period_us delta) volatile
+        {
+            us += delta.us;
+            return *this;
+        }
+        timestamp_us operator+(period_us delta) volatile
+        {
+            auto newus = *this;
+            return newus += delta;
         }
         timestamp_us operator+(period_us delta)
         {
@@ -73,6 +88,13 @@ namespace vla {
             return us < other.us;
         }
     };
+    inline period_us operator-(timestamp_us a, timestamp_us b)
+    {
+        if (a < b) {
+            return period_us(0);
+        }
+        return period_us(a.us - b.us);
+    }
 
     struct alarm_id
     {
@@ -105,7 +127,7 @@ namespace vla {
                 :id{id}, when{when}, callback{callback}, data{data}{}
         } alarms[MAX_ALARMS];
         uint8_t alarm_count = 0;
-        timestamp_us now = timestamp_us{0};
+        volatile timestamp_us now = timestamp_us{0};
         const period_us period;
     public:
         template<class tick_t>
@@ -116,6 +138,7 @@ namespace vla {
         void cancel_alarm(alarm_id id);
         timestamp_us get_current_time()
         {
+            CliSei s;
             return timestamp_us{now};
         }
         // f runs inside the interrupt handler so no loitering
