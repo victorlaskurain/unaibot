@@ -15,10 +15,11 @@ import os
 import time
 import sys
 
-READ_COILS    = 0
-READ_COUNTERS = 1
-READ_ANALOG   = 2
-READ_OP_COUNT = 3
+READ_COILS     = 0
+READ_COUNTERS  = 1
+READ_ANALOG    = 2
+READ_USER_DATA = 3
+READ_OP_COUNT  = 4
 
 COLOR_WHITE_ON_RED_ID = 1
 COLOR_WHITE_ON_RED = None # initialize after curses
@@ -227,22 +228,16 @@ def get_int(h=1, w=8, y=10, x=10, txt=''):
     else:
         return int(txt)
 
-class RegisterTable(Table):
-    _analog_in_count =  8
-    _tc_control_count = 2
-    _counter_count   = 24
-    _register_count = _counter_count + _analog_in_count + _tc_control_count
-    def __init__(self):
-        def _pins():
-            for port in ('B', 'C', 'D'):
-                for pin in range(8):
-                    yield '%s%s'%(port, pin)
+class RegisterTableBase(Table):
+    def __init__(self, addresses, descriptions, base_address = 0):
+        assert len(addresses) == len(descriptions)
+        self._addresses         = addresses
+        self._descriptions      = descriptions
         self._selection_visible = False
-        self._selected     = 0
-        self._addresses    = ['0x%04x'%i for i in range(self._register_count)]
-        self._descriptions = ['ANALOGIN%02d'%i for i in range(self._analog_in_count)] + \
-                             ['TC2ACONF', 'TC2BCONF'] + \
-                             ['COUNTER%02d (%s)'%(i, pin) for i, pin in zip(range(self._counter_count), _pins())]
+        self._selected          = 0
+        self._base_address      = base_address
+        self._selection_visible = False
+        self._selected          = 0
         super().__init__({
             'row_count': int(self._register_count),
             'col_formats': ['{:6}', '{:6}', '{:14}'],
@@ -254,9 +249,8 @@ class RegisterTable(Table):
         if not self._selection_visible:
             return
         self.window.chgat(self._selected + 4, 8, 6, curses.A_REVERSE)
-    def _format_table_data(self, counters, analog_values):
-        lines = ['0x%04x'%c for c in counters] + \
-                ['0x%04x'%a for a in analog_values]
+    def _format_table_data(self, values):
+        lines = ['0x%04x'%v for v in values]
         return list(zip(self._addresses, lines, self._descriptions))
     def handle_ch(self, key):
         action = None
@@ -273,25 +267,79 @@ class RegisterTable(Table):
             try:
                 value = get_int(1, 7, wy + self._selected + 3, wx + 7, initial_txt)
                 if value != self._values[self._selected]:
-                    action = ['write_registers', self._selected, [value]]
+                    action = [
+                        'write_registers',
+                        self._selected + self._base_address,
+                        [value]
+                    ]
             except ValueError:
                 pass
         elif key == ord('+'):
-            action = ['write_registers', self._selected, [self._values[self._selected] + 1]]
-            pass
+            action = [
+                'write_registers',
+                self._selected + self._base_address,
+                [self._values[self._selected] + 1]
+            ]
         elif key == ord('-'):
-            action = ['write_registers', self._selected, [self._values[self._selected] - 1]]
-            pass
+            action = [
+                'write_registers',
+                self._selected + self._base_address,
+                [self._values[self._selected] - 1]
+            ]
         self._draw_selection()
         return action
     def hide_selection(self, hide = True):
         self._selection_visible = not hide
     def set_data(self, values):
         self._values = values
-        super().set_data(self._format_table_data(
-            values[:self._counter_count],
-            values[self._counter_count:]))
+        super().set_data(self._format_table_data(values))
         self._draw_selection()
+
+class CounterTable(RegisterTableBase):
+    _counter_count  = 24
+    _register_count = _counter_count
+    _base_address   = 0x000a
+    def __init__(self):
+        def _pins():
+            for port in ('B', 'C', 'D'):
+                for pin in range(8):
+                    yield '%s%s'%(port, pin)
+        addresses    = ['0x%04x'%(i + self._base_address) for i in range(self._register_count)]
+        descriptions = ['COUNTER%02d (%s)'%(i, pin) for i, pin in zip(range(self._register_count), _pins())]
+        super().__init__(addresses, descriptions, self._base_address)
+
+class AnalogTable(RegisterTableBase):
+    _analog_in_count  = 8
+    _tc_control_count = 2
+    _register_count   = _analog_in_count + _tc_control_count
+    _base_address     = 0x0000
+    def __init__(self):
+        addresses    = ['0x%04x'%(i + self._base_address) for i in range(self._register_count)]
+        descriptions = ['ANALOGIN%02d'%i for i in range(self._analog_in_count)] + \
+                       ['TC2ACONF', 'TC2BCONF']
+
+        super().__init__(addresses, descriptions, self._base_address)
+
+class UserDataTable(RegisterTableBase):
+    _register_count = 12
+    _base_address   = 0x0022
+    def __init__(self):
+        addresses    = ['0x%04x'%(i + self._base_address) for i in range(self._register_count)]
+        descriptions = [
+            'TS (L)',
+            'TS (H)',
+            'T. ALL (L)',
+            'T. ALL (H)',
+            'T. TR  (L)',
+            'T. TR  (H)',
+            'T. PDU (L)',
+            'T. PDU (H)',
+            'T. ADC (L)',
+            'T. ADC (H)',
+            'T. CNT (L)',
+            'T. CNT (H)',
+        ]
+        super().__init__(addresses, descriptions, self._base_address)
 
 def show_dialog(parent, title, msg):
     lines = msg.split('\n')
@@ -310,15 +358,19 @@ def show_dialog(parent, title, msg):
     window.getch()
     p.hide()
 
-def _center(container, coils, registers):
+def _center(container, tables):
     container_y, container_x = container.getmaxyx()
-    w = coils.w + registers.w + 2
-    h = max([coils.h, registers.h])
-    coils_x     = int((container_x - w) / 2)
-    registers_x = coils_x + coils.w + 2
-    y = int((container_y - h) / 2)
-    coils    .move(y, coils_x)
-    registers.move(y, registers_x)
+    w         = sum([t.w for t in tables]) + len(tables)
+    h         = max([t.h for t in tables])
+    current_x = int((container_x - w) / 2) - 1
+    y         = int((container_y - h) / 2)
+    current_table = tables[0]
+    current_table.move(y, current_x)
+    last_table = current_table
+    for current_table in tables[1:]:
+        current_x += last_table.w + 1
+        current_table.move(y, current_x)
+        last_table = current_table
 
 def _configure_curses(stdscr):
     curses.start_color()
@@ -351,10 +403,12 @@ def tui_main(stdscr):
     # cleanest and simplest solution.
     os.system('stty -hup -F %s'%SERIAL_PORT)
     _configure_curses(stdscr)
-    coil_table = CoilTable()
-    register_table = RegisterTable()
-    tables = Circular([coil_table, register_table])
-    _center(stdscr, coil_table, register_table)
+    coil_table    = CoilTable()
+    counter_table = CounterTable()
+    analog_table  = AnalogTable()
+    ud_table      = UserDataTable()
+    tables        = Circular([coil_table, analog_table, counter_table, ud_table])
+    _center(stdscr, tables)
     client = ModbusSerialClient(
         method = "rtu",
         port=SERIAL_PORT,
@@ -365,21 +419,25 @@ def tui_main(stdscr):
         dsrdtr=False,
         timeout=0.01)
     conn  = client.connect()
-    read_op       = 0
-    coils         = []
-    counters      = []
-    analog_values = []
+    read_op          = 0
+    coils            = []
+    counters         = []
+    analog_values    = []
+    user_data_values = []
     while True:
         if read_op == READ_COILS:
-            coils = client.read_coils(0x0000, 0xd8, unit=UNIT_ID).bits
+            coils            = client.read_coils(0x0000, 0xd8, unit=UNIT_ID).bits
         elif read_op == READ_COUNTERS:
-            counters = client.read_holding_registers(0x000a, 24, unit=UNIT_ID).registers
+            counters         = client.read_holding_registers(0x000a, 24, unit=UNIT_ID).registers
         elif read_op == READ_ANALOG:
-            analog_values = client.read_holding_registers(0x0000, 10, unit=UNIT_ID).registers
+            analog_values    = client.read_holding_registers(0x0000, 10, unit=UNIT_ID).registers
+        elif read_op == READ_USER_DATA:
+            user_data_values = client.read_holding_registers(0x0022, 12, unit=UNIT_ID).registers
         read_op = (read_op + 1) % READ_OP_COUNT
         coil_table.set_data(coils)
-        registers     = analog_values + counters
-        register_table.set_data(registers)
+        analog_table.set_data(analog_values)
+        counter_table.set_data(counters)
+        ud_table.set_data(user_data_values)
         stdscr.touchwin()
         panel.update_panels()
         curses.doupdate()
@@ -398,7 +456,7 @@ def tui_main(stdscr):
         elif ch == curses.KEY_RESIZE:
             stdscr.clear()
             stdscr.border(0)
-            _center(stdscr, coil_table, register_table)
+            _center(stdscr, tables)
         else:
             action = tables.current().handle_ch(ch)
         tl_attr = curses.A_NORMAL
