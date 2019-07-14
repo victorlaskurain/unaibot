@@ -21,6 +21,8 @@ BIN_FORMAT = ihex
 
 # compiler flags
 CXXFLAGS  += -Wall -O3 -DF_CPU=$(F_CPU) -mmcu=$(MCU) -std=c++11
+# see http://kibergus.su/en/node/92
+CXXFLAGS  += -fno-threadsafe-statics
 
 # programmer configuration
 AVRDUDE    = avrdude -F -V
