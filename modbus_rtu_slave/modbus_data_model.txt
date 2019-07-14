@@ -148,7 +148,7 @@ finally PORTD.
 | 000a | COUNTER00  |
 | 0016 | COUNTER15  |
 |  ... | ...        |
-| 0100 | USER DATA  |
+| 0022 | USER DATA  |
 |------+------------|
 
 - COUNTERnn: current value of the counter linked to the nn pin. Can be
@@ -183,3 +183,67 @@ finally PORTD.
   - 0: DISCONNECTED
   - 2: phase correct PWM non inverting
   - 3: phase correct PWM non inverting
+
+* Timing considerations
+
+In order to generate the tables shown in this section the execution of
+the program is timed using the internal 20Khz signal and the resulting
+32 bit values are exposed as user data. All readings are in
+microseconds in show the maximum value recorded.
+
+#+CAPTION: Calling read_coils to read 216 bits
+#+NAME: tab:with-read-coils
+|--------+--------+-------------|
+|   ADDR |  VALUE | DESCRIPTION |
+|--------+--------+-------------|
+| 0x0024 | 0x0c1c | T. ALL (L)  |
+| 0x0025 | 0x0000 | T. ALL (H)  |
+| 0x0026 | 0x0096 | T. TR  (L)  |
+| 0x0027 | 0x0000 | T. TR  (H)  |
+| 0x0028 | 0x0b86 | T. PDU (L)  |
+| 0x0029 | 0x0000 | T. PDU (H)  |
+| 0x002a | 0x0032 | T. ADC (L)  |
+| 0x002b | 0x0000 | T. ADC (H)  |
+| 0x002c | 0x0096 | T. CNT (L)  |
+| 0x002d | 0x0000 | T. CNT (H)  |
+|--------+--------+-------------|
+
+#+CAPTION: Never calling read coils
+#+NAME: tab:without-read-coils
+|--------+--------+-------------|
+|   ADDR |  VALUE | DESCRIPTION |
+|--------+--------+-------------|
+| 0x0024 | 0x0226 | T. ALL (L)  |
+| 0x0025 | 0x0000 | T. ALL (H)  |
+| 0x0026 | 0x0096 | T. TR  (L)  |
+| 0x0027 | 0x0000 | T. TR  (H)  |
+| 0x0028 | 0x015e | T. PDU (L)  |
+| 0x0029 | 0x0000 | T. PDU (H)  |
+| 0x002a | 0x0032 | T. ADC (L)  |
+| 0x002b | 0x0000 | T. ADC (H)  |
+| 0x002c | 0x0096 | T. CNT (L)  |
+| 0x002d | 0x0000 | T. CNT (H)  |
+|--------+--------+-------------|
+
+#+CAPTION: read coils returns constant 0
+#+NAME: tab:return-0-read-coils
+|--------+--------+-------------|
+|   ADDR |  VALUE | DESCRIPTION |
+|--------+--------+-------------|
+| 0x0024 | 0x0226 | T. ALL (L)  |
+| 0x0025 | 0x0000 | T. ALL (H)  |
+| 0x0026 | 0x0096 | T. TR  (L)  |
+| 0x0027 | 0x0000 | T. TR  (H)  |
+| 0x0028 | 0x015e | T. PDU (L)  |
+| 0x0029 | 0x0000 | T. PDU (H)  |
+| 0x002a | 0x0032 | T. ADC (L)  |
+| 0x002b | 0x0000 | T. ADC (H)  |
+| 0x002c | 0x0096 | T. CNT (L)  |
+| 0x002d | 0x0000 | T. CNT (H)  |
+|--------+--------+-------------|
+
+Read coils is found to be the most time consuming operation. Reading
+216 coils requires 3100us (0xc1c). If we never read any coils the
+longest remaining operation requires only 216us. We see the same value
+of 216us if we simplify the implementation of the coil reading
+function to return always the constant 0.
