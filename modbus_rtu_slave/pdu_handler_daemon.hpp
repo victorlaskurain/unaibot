@@ -16,11 +16,11 @@ namespace vla {
         uint8_t enabled = 0;
         uint16_t values[uint8_t(adc_id_t::ADC7) + 1] = {0};
     public:
-        uint16_t get_value(adc_id_t id)
+        uint16_t get_value(adc_id_t id) const
         {
             return values[uint8_t(id)];
         }
-        bool is_enabled(adc_id_t id)
+        bool is_enabled(adc_id_t id) const
         {
             return enabled & (to_bit_mask(id));
         }
@@ -40,11 +40,11 @@ namespace vla {
         uint16_t values[uint8_t(counter_id_t::COUNTER_MAX)] = {0};
         static_assert(sizeof(uint32_t) * 8 >= uint8_t(counter_id_t::COUNTER_MAX), "Too many counters.");
     public:
-        uint16_t get_value(counter_id_t id)
+        uint16_t get_value(counter_id_t id) const
         {
             return values[uint8_t(id)];
         }
-        bool is_enabled(counter_id_t id)
+        bool is_enabled(counter_id_t id) const
         {
             return enabled & to_bit_mask(id);
         }
