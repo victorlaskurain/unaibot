@@ -45,23 +45,21 @@ void vla::adc_daemon::operator()()
         if (!in_q.empty()) {
             in_q.pop(msg);
             const uint8_t adc_i = uint8_t(msg.id);
-            if (msg.cb) { // activate channel
+            if (msg.enabled) { // activate channel
                 bool must_enable = (0 == enabled_count);
-                if (!channels[adc_i].cb) {
+                if (!channels[adc_i].enabled) {
                     ++enabled_count;
                 }
-                channels[adc_i].cb   = msg.cb;
-                channels[adc_i].data = msg.data;
+                channels[adc_i] = msg;
                 if (must_enable) {
                     enable_adc();
                     start_read_next_enabled_channel();
                 }
             } else { // deactivate channel
-                if (channels[adc_i].cb) {
+                if (channels[adc_i].enabled) {
                     --enabled_count;
                 }
-                channels[adc_i].cb   = 0;
-                channels[adc_i].data = 0;
+                channels[adc_i] = adc_msg_t{};
                 if (!enabled_count) {
                     disable_adc();
                 }
@@ -69,12 +67,13 @@ void vla::adc_daemon::operator()()
         }
         if (enabled_count) {
             if (read_ready()) {
-                if (channels[active_channel_i].cb) {
+                if (channels[active_channel_i].enabled) {
                     last_read = read_adc_value();
-                    ptxx_wait(channels[active_channel_i].cb(
-                                  channels[active_channel_i].data,
-                                  adc_id_t(active_channel_i),
-                                  last_read));
+                    ptxx_wait(channels[active_channel_i].reply(
+                                  adc_set_value_msg_t{
+                                      channels[active_channel_i].id,
+                                      last_read
+                                          }));
                 }
                 start_read_next_enabled_channel();
             }
@@ -87,7 +86,7 @@ void vla::adc_daemon::operator()()
 void vla::adc_daemon::start_read_next_enabled_channel()
 {
     uint8_t i = uint8_t(next(adc_id_t(active_channel_i)));
-    while (!channels[i].cb) {
+    while (!channels[i].enabled) {
         i = uint8_t(next(adc_id_t(i)));
     }
     active_channel_i = i;

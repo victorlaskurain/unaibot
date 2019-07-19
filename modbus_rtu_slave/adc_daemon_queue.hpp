@@ -16,40 +16,17 @@ namespace vla {
         return adc_id_t((uint8_t(adc_id) + 1) % uint8_t(adc_id_t::ADC_MAX));
     }
 
-    typedef bool(*adc_callback_t)(void *data, adc_id_t id, uint16_t value);
-    struct adc_set_enabled_msg_t
+    struct adc_msg_t: public message_with_reply<adc_set_value_msg_t>
     {
-        adc_id_t       id;
-        adc_callback_t cb;
-        void*          data;
-    };
-
-    class adc_msg_t
-    {
-    public:
-        adc_id_t       id   = adc_id_t::ADC_MAX;
-        void*          data = 0;
-        adc_callback_t cb   = 0;
+        adc_id_t id      = adc_id_t::ADC_MAX;
+        bool     enabled = false;
         adc_msg_t() = default;
+        adc_msg_t(adc_id_t id, bool enabled):
+            id(id), enabled(enabled){}
         template<typename ReplyQueue>
-        adc_msg_t(adc_id_t id, ReplyQueue &q):
-            id(id),
-            data(&q),
-            cb([](void *q, adc_id_t id, uint16_t v) {
-                ReplyQueue *queue = static_cast<ReplyQueue*>(q);
-                if (queue->full()) {
-                    return false;
-                }
-                queue->push(adc_set_value_msg_t{id, v});
-                return true;
-            })
-        {}
-        static adc_msg_t msg_disable(adc_id_t id)
-        {
-            adc_msg_t msg;
-            msg.id = id;
-            return msg;
-        }
+        adc_msg_t(adc_id_t id, bool enabled, ReplyQueue &q):
+            message_with_reply<adc_set_value_msg_t>(q),
+            id(id), enabled(enabled){}
     };
 
     // this queue never gets called from interruptions so no locking

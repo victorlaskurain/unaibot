@@ -158,9 +158,9 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
         break;
     case IOM_PORTC:
         if (v) {
-            to_adc_q.push(adc_msg_t{adc_id_t(bit), in_q});
+            to_adc_q.push(adc_msg_t{adc_id_t(bit), true, in_q});
         } else {
-            to_adc_q.push(adc_msg_t::msg_disable(adc_id_t(bit)));
+            to_adc_q.push(adc_msg_t(adc_id_t(bit), false));
             adc.set_enabled(adc_id_t(bit), 0);
         }
         break;
