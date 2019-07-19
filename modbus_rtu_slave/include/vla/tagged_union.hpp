@@ -58,6 +58,7 @@ namespace vla {
     public:
         union type
         {
+            type() {};
             union_member_first head;
             typename recursive_union<union_members_rest...>::type tail;
         };
@@ -68,6 +69,7 @@ namespace vla {
     public:
         union type
         {
+            type() {};
             union_member_head head;
         };
     };

@@ -121,6 +121,52 @@ namespace vla {
     template<typename ValueType, size_t size>
     using msg_queue_fast = basic_msg_queue<ValueType, size, NopLock>;
 
+    /**
+     * This class can be used to easily define messages with require a
+     * reply in a given queue.
+     *
+     * For example, let's say that we have a service that reports the
+     * current temperature as a float when requested. This service
+     * could declare that it receives the get_temperature message and
+     * replies to it with the temperature message this way:
+     *
+     * struct temperature_msg_t {
+     *     float temp;
+     * };
+     * struct get_temperature_msg_t : public message_with_reply<temperature_msg_t>
+     * {
+     *     template<typename ReplyQueue>
+     *     get_temperature_msg_t(ReplyQueue &q):
+     *         message_with_reply<adc_set_value_msg_t>(q){}
+     * }
+     */
+    template<typename MsgReply>
+    class message_with_reply
+    {
+        typedef bool(*reply_callback_t)(void *queue, const MsgReply &reply);
+        reply_callback_t cb    = nullptr;
+        void            *queue = nullptr;
+    public:
+        message_with_reply() = default;
+        template<typename ReplyQueue>
+        message_with_reply(ReplyQueue &q)
+        {
+            queue = &q;
+            cb = [](void *q, const MsgReply &reply) {
+                ReplyQueue *queue = static_cast<ReplyQueue*>(q);
+                if (queue->full()) {
+                    return false;
+                }
+                queue->push(reply);
+                return true;
+            };
+        }
+        template<typename ConvertibleToMsgReply>
+        bool reply(const ConvertibleToMsgReply &reply)
+        {
+            return cb && queue && cb(queue, reply);
+        }
+    };
 }
 
 #endif
