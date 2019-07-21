@@ -203,9 +203,9 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
         }
         const counter_id_t counter_id = counter_id_t(counter_offset);
         if (v) {
-            to_counter_daemon_q.push(counters_daemon_msg_t{counter_id, in_q});
+            to_counter_daemon_q.push(counters_set_enabled_msg_t(counter_id, true, in_q));
         } else {
-            to_counter_daemon_q.push(counters_daemon_msg_t::msg_disable(counter_id));
+            to_counter_daemon_q.push(counters_set_enabled_msg_t(counter_id, false));
             counters.set_enabled(counter_id, 0);
         }
         break;

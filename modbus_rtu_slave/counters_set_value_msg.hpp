@@ -36,7 +36,7 @@ namespace vla {
     struct counters_set_value_msg_t
     {
         counter_id_t id;
-        uint16_t value;
+        uint16_t     value;
     };
 }
 

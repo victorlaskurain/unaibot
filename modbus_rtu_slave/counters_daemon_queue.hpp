@@ -12,12 +12,18 @@ namespace vla {
         return uint32_t(v)<<uint8_t(id);
     }
 
-    typedef bool(*counters_callback_t)(void *data, counter_id_t id, uint16_t value);
-    struct counters_set_enabled_msg_t
+    struct counters_set_enabled_msg_t:
+        public message_with_reply<counters_set_value_msg_t>
     {
-        counter_id_t        id;
-        counters_callback_t cb;
-        void*               data;
+        counter_id_t id      = counter_id_t::COUNTER_MAX;
+        bool         enabled = false;
+        counters_set_enabled_msg_t() = default;
+        counters_set_enabled_msg_t(counter_id_t id, bool enabled):
+            id(id), enabled(enabled){}
+        template<typename ReplyQueue>
+        counters_set_enabled_msg_t(counter_id_t id, bool enabled, ReplyQueue &q):
+            message_with_reply<counters_set_value_msg_t>(q),
+            id(id), enabled(enabled){}
     };
 
     class counters_daemon_msg_t: public tagged_union<
@@ -35,24 +41,6 @@ namespace vla {
         counters_daemon_msg_t(counter_id_t id, uint16_t v):
             parent_t(counters_set_value_msg_t{id, v})
         {}
-        template<typename ReplyQueue>
-        counters_daemon_msg_t(counter_id_t id, ReplyQueue &q):
-            parent_t(counters_set_enabled_msg_t{
-                    id,
-                    [](void *q, counter_id_t id, uint16_t v) {
-                        ReplyQueue *queue = static_cast<ReplyQueue*>(q);
-                        if (queue->full()) {
-                            return false;
-                        }
-                        queue->push(counters_set_value_msg_t{id, v});
-                        return true;
-                    },
-                    static_cast<ReplyQueue*>(&q)
-                }){}
-        static counters_daemon_msg_t msg_disable(counter_id_t id)
-        {
-            return counters_set_enabled_msg_t{id, nullptr, nullptr};
-        }
     };
     // this queue never gets called from interruptions so no locking
     // is needed.

@@ -22,9 +22,7 @@ namespace vla {
         debounced_counters()
         {
             for (uint8_t i = 0; i < debounced_counters::signal_count; ++i) {
-                callbacks[i].id   = counter_id_t(i);
-                callbacks[i].cb   = 0;
-                callbacks[i].data = 0;
+                callbacks[i] = counters_set_enabled_msg_t(counter_id_t(i), false);
             }
         }
         void set_enabled(const counters_set_enabled_msg_t& msg)
@@ -32,7 +30,7 @@ namespace vla {
             static_assert(256 > debounced_counters::signal_count, "Bad counter id possible");
             auto i_signal = uint8_t(msg.id);
             callbacks[i_signal] = msg;
-            set_enabled(i_signal, bool(msg.cb));
+            set_enabled(i_signal, msg.enabled);
         }
     };
     static debounced_counters counters;
@@ -61,19 +59,21 @@ namespace vla {
     void counters_daemon::operator()()
     {
         bool timeout = false;
+        counters_set_enabled_msg_t enable_msg;
+        counters_set_value_msg_t   value_msg;
         ptxx_begin();
         while (true) {
             ptxx_wait(!in_q.empty() || (timeout = is_period_elapsed(clock)));
             while (!in_q.empty()) {
-                counters_set_enabled_msg_t enable_msg;
-                counters_set_value_msg_t   value_msg;
                 if (in_q.pop(enable_msg)) {
                     counters.set_enabled(enable_msg);
-                    if (enable_msg.cb) {
-                        ptxx_wait(enable_msg.cb(
-                                      enable_msg.data,
-                                      enable_msg.id,
-                                      counters.get_counter_value(uint8_t(enable_msg.id))));
+                    if (enable_msg.enabled) {
+                        ptxx_wait(enable_msg.reply(
+                            counters_set_value_msg_t{
+                                enable_msg.id,
+                                counters.get_counter_value(uint8_t(enable_msg.id))
+                            }
+                        ));
                     }
                 } else if (in_q.pop(value_msg)) {
                     counters.set_value(uint8_t(value_msg.id), value_msg.value);
@@ -84,10 +84,12 @@ namespace vla {
                 for (i = 0; i < counters.signal_count; ++i) {
                     if (counters.is_enabled(i) && counters.is_fall_edge(i)) {
                         cb_data = &counters.callbacks[i];
-                        ptxx_wait(cb_data->cb(
-                                      cb_data->data,
-                                      cb_data->id,
-                                      counters.get_counter_value(i)));
+                        ptxx_wait(cb_data->reply(
+                            counters_set_value_msg_t{
+                                cb_data->id,
+                                counters.get_counter_value(i)
+                            }
+                        ));
                     }
                 }
             }
