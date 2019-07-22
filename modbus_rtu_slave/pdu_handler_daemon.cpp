@@ -3,6 +3,8 @@
 #include <vla/registers.hpp>
 #include <vla/timers.hpp>
 #include <util/crc16.h>
+#include <avr/io.h>
+#include <avr/eeprom.h>
 
 namespace vla {
     enum coil_record_number_t {
@@ -33,6 +35,8 @@ namespace vla {
         PO_PORTB,
         PO_PORTC,
         PO_PORTD,
+        SAFE_CONFIG_COIL_ADDRESS = 0x100,
+        LOAD_CONFIG_COIL_ADDRESS = 0x101
     };
     template<typename registry_t>
     bool get_bit(uint8_t bit)
@@ -50,6 +54,29 @@ namespace vla {
         registry_t::ref() = (registry_t::ref() & ~(1<<bit)) | (v<<bit);
     }
 }
+
+struct config_coils_t
+{
+    uint8_t iod_portb;
+    uint8_t iod_portc;
+    uint8_t iod_portd;
+    uint8_t iom_portb;
+    uint8_t iom_portc;
+    uint8_t iom_portd;
+    uint8_t eip_portb;
+    uint8_t eip_portc;
+    uint8_t eip_portd;
+    uint8_t ec_portb;
+    uint8_t ec_portc;
+    uint8_t ec_portd;
+};
+struct config_t
+{
+    uint8_t        tag[3];
+    config_coils_t bits;
+};
+
+config_t EEMEM ROM_CONFIG;
 
 bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_value)
 {
@@ -144,6 +171,11 @@ bool vla::pdu_handler::execute_read_single_coil(uint16_t address, bool *bit_valu
 
 bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
 {
+    if (SAFE_CONFIG_COIL_ADDRESS == address) {
+        return save_config();
+    } else if (LOAD_CONFIG_COIL_ADDRESS == address) {
+        return load_config();
+    }
     const uint8_t registry = address / 8;
     const uint8_t bit      = address % 8;
     switch (coil_record_number_t(registry)) {
@@ -156,6 +188,9 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
     case IOD_PORTC:
         set_bit<PORTC_t::ddr_t>(bit, v);
         break;
+    case IOM_PORTB:
+        // not supported, ignore
+        break;
     case IOM_PORTC:
         if (v) {
             to_adc_q.push(adc_msg_t{adc_id_t(bit), true, in_q});
@@ -164,21 +199,24 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
             adc.set_enabled(adc_id_t(bit), 0);
         }
         break;
+    case IOM_PORTD:
+        // not supported, ignore
+        break;
     case EIP_PORTD:
         if (!is_input_mode<PORTD_t>(bit)) {
-            return false;
+            return true;
         }
         set_bit<PORTD_t>(bit, v);
         break;
     case EIP_PORTB:
         if (!is_input_mode<PORTB_t>(bit)) {
-            return false;
+            return true;
         }
         set_bit<PORTB_t>(bit, v);
         break;
     case EIP_PORTC:
         if (!is_input_mode<PORTC_t>(bit)) {
-            return false;
+            return true;
         }
         set_bit<PORTC_t>(bit, v);
         break;
@@ -358,6 +396,19 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
     return true;
 }
 
+bool vla::pdu_handler::load_config()
+{
+    config_t conf;
+    eeprom_read_block(&conf, &ROM_CONFIG, sizeof(conf));
+    if (conf.tag[0] == 'V' && conf.tag[1] == 'L' && conf.tag[2] == 'A') {
+        return execute_write_coils(
+            IOD_PORTB * 8,
+            reinterpret_cast<uint8_t*>(&conf.bits),
+            sizeof(conf.bits) * 8);
+    }
+    return false;
+}
+
 void vla::pdu_handler::operator()()
 {
     adc_set_value_msg_t      adc_msg;
@@ -379,4 +430,22 @@ void vla::pdu_handler::operator()()
         }
     }
     ptxx_end();
+}
+
+bool vla::pdu_handler::save_config()
+{
+    config_t conf;
+    conf.tag[0] = 'V';
+    conf.tag[1] = 'L';
+    conf.tag[2] = 'A';
+    bool ok;
+    ok = execute_read_coils(
+        IOD_PORTB * 8,
+        sizeof(conf.bits) * 8,
+        reinterpret_cast<uint8_t*>(&conf.bits));
+    if (ok) {
+        eeprom_write_block(&conf, &ROM_CONFIG, sizeof(conf));
+        return true;
+    }
+    return false;
 }

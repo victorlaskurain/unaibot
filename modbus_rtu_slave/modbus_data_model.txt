@@ -133,6 +133,25 @@ finally PORTD.
   to input.
   Address: PInn -> nn + 0xC0
 
+** Commands
+
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+|      | __7__ | __6__ | __5__ | __4__ | __3__ | __2__ | __1__ | __0__ |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+| 0100 |       |       |       |       |       |       | LOAD  | SAVE  |
+|------+-------+-------+-------+-------+-------+-------+-------+-------|
+
+This bits are read only.
+
+Requesting a write to the 0x100 address saves the current
+configuration (the IOD, IOM, EIP and EC bits) to the permanent
+storage.
+
+Requesting a write to the 0x101 address loads the stored configuration
+(the IOD, IOM, EIP and EC bits) to the permanent storage.
+
+The last stored configuration is restored automatically after a reset.
+
 * Records
 
 |------+------------|

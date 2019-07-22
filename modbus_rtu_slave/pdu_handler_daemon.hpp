@@ -122,7 +122,9 @@ namespace vla {
         }
         bool is_write_coils_valid_data_address(uint16_t addr, uint16_t count)
         {
-            return (addr >= 0x0048 && addr + count < 0x00d8);   // Output pin space
+            return (addr >= 0x0048 && addr + count < 0x00d8) ||  // Output pin space
+                   (addr == 0x0100 && count == 1) ||             // save address
+                   (addr == 0x0101 && count == 1);               // load address
         }
         bool is_write_single_coil_valid_data_address(uint16_t addr)
         {
@@ -143,8 +145,12 @@ namespace vla {
             pwm_timer2(tc_mode::PHASE_CORRECT_PWM, clock_source_2::STOP),
             pwm2b(pwm_timer2, cm_mode::DISCONNECTED),
             pwm2a(pwm_timer2, cm_mode::DISCONNECTED)
-        {}
+        {
+            load_config();
+        }
         void operator()();
+        bool load_config();
+        bool save_config();
         void set_user_data(register_values ud)
         {
             user_data = ud;

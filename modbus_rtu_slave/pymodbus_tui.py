@@ -445,7 +445,7 @@ def tui_main(stdscr):
         action = None
         if ch == -1:
             continue
-        if ch == ord('q'):
+        elif ch == ord('q'):
             return
         elif ch == ord('\t'):
             tables.current().hide_selection(True)
@@ -457,6 +457,10 @@ def tui_main(stdscr):
             stdscr.clear()
             stdscr.border(0)
             _center(stdscr, tables)
+        elif ch == ord('s'):
+            action = ('write_coils', 0x0100, [1])
+        elif ch == ord('l'):
+            action = ('write_coils', 0x0101, [1])
         else:
             action = tables.current().handle_ch(ch)
         tl_attr = curses.A_NORMAL

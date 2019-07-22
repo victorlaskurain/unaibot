@@ -140,7 +140,7 @@ namespace vla {
             }
             return true;
         }
-        bool execute_write_coils(uint16_t address, uint8_t *bits, uint16_t bit_count)
+        bool execute_write_coils(uint16_t address, const uint8_t *bits, uint16_t bit_count)
         {
             for (uint16_t i = 0; i < bit_count; ++i) {
                 if (!self().execute_write_single_coil(
