@@ -10,10 +10,12 @@ log = logging.getLogger()
 log.setLevel(logging.WARNING)
 
 from pymodbus.client.sync import ModbusSerialClient
+from pymodbus.client.sync import ModbusTcpClient
 from pymodbus import utilities
 import os
 import time
 import sys
+import argparse
 
 READ_COILS     = 0
 READ_COUNTERS  = 1
@@ -23,6 +25,8 @@ READ_OP_COUNT  = 4
 
 COLOR_WHITE_ON_RED_ID = 1
 COLOR_WHITE_ON_RED = None # initialize after curses
+
+MODBUS_TCP_PORT_DEFAULT = 5020
 
 SERIAL_PORT = '/dev/ttyACM0'
 UNIT_ID     = 0x76
@@ -395,13 +399,26 @@ class Circular(list):
     def next(self):
         self.i = (self.i + 1) % len(self)
 
-def tui_main(stdscr):
-    # This prevents arduino autoreset. It does not work on the first call
-    # because it doesn't give time to the Arduino program to
-    # initialize. After that it is not necessary until the configuration
-    # of the port changes again but keeping it here seems like the
-    # cleanest and simplest solution.
-    os.system('stty -hup -F %s'%SERIAL_PORT)
+def tui_main(stdscr, args):
+    if args.host:
+        client = ModbusTcpClient(args.host, port=args.port)
+    else:
+        # This prevents arduino autoreset. It does not work on the first call
+        # because it doesn't give time to the Arduino program to
+        # initialize. After that it is not necessary until the configuration
+        # of the port changes again but keeping it here seems like the
+        # cleanest and simplest solution.
+        os.system('stty -hup -F %s'%SERIAL_PORT)
+        client = ModbusSerialClient(
+            method = "rtu",
+            port=SERIAL_PORT,
+            stopbits = 1,
+            bytesize = 8,
+            parity = 'E',
+            baudrate= 19200,
+            dsrdtr=False,
+            timeout=0.01)
+        conn  = client.connect()
     _configure_curses(stdscr)
     coil_table    = CoilTable()
     counter_table = CounterTable()
@@ -409,16 +426,6 @@ def tui_main(stdscr):
     ud_table      = UserDataTable()
     tables        = Circular([coil_table, analog_table, counter_table, ud_table])
     _center(stdscr, tables)
-    client = ModbusSerialClient(
-        method = "rtu",
-        port=SERIAL_PORT,
-        stopbits = 1,
-        bytesize = 8,
-        parity = 'E',
-        baudrate= 19200,
-        dsrdtr=False,
-        timeout=0.01)
-    conn  = client.connect()
     read_op          = 0
     coils            = []
     counters         = []
@@ -488,7 +495,15 @@ def tui_main(stdscr):
         stdscr.clrtoeol()
 
 def main():
-    curses.wrapper(tui_main)
+    parser = argparse.ArgumentParser(description="""
+Curses based UI MODBUS client.
+
+If --host is used connects to the given TCP server, otherwise connects to the serial port.
+    """)
+    parser.add_argument('--host', default=None)
+    parser.add_argument('--port', default=MODBUS_TCP_PORT_DEFAULT)
+    args = parser.parse_args()
+    curses.wrapper(tui_main, args)
 
 if __name__ == '__main__':
     main()
