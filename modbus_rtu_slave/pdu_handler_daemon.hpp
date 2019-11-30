@@ -84,14 +84,10 @@ namespace vla {
         // member functions protected and callable from the parent.
         friend class pdu_handler_base<pdu_handler>;
     protected:
-        bool execute_read_single_register(uint16_t address, uint16_t *word);
-        bool execute_read_single_coil(uint16_t address, bool *bit_value);
         bool is_write_registers_supported()
         {
             return true;
         }
-        bool execute_write_single_coil(uint16_t address, bool v);
-        bool execute_write_single_register(uint16_t address, uint16_t v);
         register_values get_user_data()
         {
             return user_data;
@@ -155,6 +151,10 @@ namespace vla {
         {
             user_data = ud;
         }
+        bool execute_read_single_coil(uint16_t address, bool *bit_value);
+        bool execute_write_single_coil(uint16_t address, bool v);
+        bool execute_read_single_register(uint16_t address, uint16_t *word);
+        bool execute_write_single_register(uint16_t address, uint16_t v);
     };
 
 }
