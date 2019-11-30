@@ -1,7 +1,7 @@
 #ifndef VLA_MODBUS_RTU_SLAVE_COUNTERS_DAEMON
 #define VLA_MODBUS_RTU_SLAVE_COUNTERS_DAEMON
 
-#include "counters_daemon_queue.hpp"
+#include <vla/counters_daemon_queue.hpp>
 #include <vla/protothreads.hpp>
 #include <vla/rt_clock.hpp>
 

@@ -2,7 +2,7 @@
 #define VLA_MODBUS_RTU_SLAVE_ADC_DAEMON_QUEUE
 
 #include <vla/msg_queue.hpp>
-#include "adc_set_value_msg.hpp"
+#include <vla/adc_set_value_msg.hpp>
 #include <stdint.h>
 
 namespace vla {

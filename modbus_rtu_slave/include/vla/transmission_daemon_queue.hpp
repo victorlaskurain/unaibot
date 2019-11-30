@@ -2,8 +2,8 @@
 #define VLA_MODBUS_RTU_SLAVE_TRANSMISSION_DAEMON_QUEUE
 
 #include <vla/tagged_union_queue.hpp>
-#include "timeout_msg.hpp"
-#include "buffer_msg.hpp"
+#include <vla/timeout_msg.hpp>
+#include <vla/buffer_msg.hpp>
 #include <stdint.h>
 
 namespace vla {

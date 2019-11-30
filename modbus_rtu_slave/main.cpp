@@ -1,7 +1,8 @@
-#include "pdu_handler_daemon.hpp"
-#include "transmission_daemon.hpp"
-#include "adc_daemon.hpp"
-#include "counters_daemon.hpp"
+#include <vla/pdu_handler_daemon.hpp>
+#include <vla/transmission_daemon.hpp>
+#include <vla/adc_daemon.hpp>
+#include <vla/counters_daemon.hpp>
+#include <vla/main_custom.hpp>
 
 #include <vla/registers.hpp>
 #include <vla/serial.hpp>
@@ -58,6 +59,10 @@ int main(int argc, char **argv)
         ((uint16_t*)&counters_max) + 1
     };
     pduh.set_user_data(register_values{user_data, sizeof user_data / sizeof user_data[0]});
+    // need a call to the threads in order to proto_init to work
+    // properly
+    tr(); pduh(); adc(); counters();
+    init(pduh);
     while(true) {
         ts1 = clock.get_current_time();
         tr();
@@ -73,5 +78,6 @@ int main(int argc, char **argv)
         adc_max      = max(adc_max     , (ts4 - ts3).us);
         counters_max = max(counters_max, (ts5 - ts4).us);
         all_max      = max(all_max     , (ts5 - ts1).us);
+        loop(pduh);
     }
 }

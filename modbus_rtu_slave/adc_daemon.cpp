@@ -1,4 +1,4 @@
-#include "adc_daemon.hpp"
+#include <vla/adc_daemon.hpp>
 #include <vla/registers.hpp>
 
 namespace vla {

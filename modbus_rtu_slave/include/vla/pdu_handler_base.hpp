@@ -1,7 +1,7 @@
 #ifndef VLA_MODBUS_RTU_SLAVE_PDU_HANDLER_BASE
 #define VLA_MODBUS_RTU_SLAVE_PDU_HANDLER_BASE
 
-#include "pdu_handler_daemon_queue.hpp"
+#include <vla/pdu_handler_daemon_queue.hpp>
 #include <vla/protothreads.hpp>
 #include <util/crc16.h>
 #include <string.h>

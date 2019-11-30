@@ -1,8 +1,8 @@
 #ifndef VLA_MODBUS_RTU_SLAVE_TRANSMISSION_DAEMON
 #define VLA_MODBUS_RTU_SLAVE_TRANSMISSION_DAEMON
 
-#include "transmission_daemon_queue.hpp"
-#include "pdu_handler_daemon_queue.hpp"
+#include <vla/transmission_daemon_queue.hpp>
+#include <vla/pdu_handler_daemon_queue.hpp>
 #include <vla/msg_queue.hpp>
 #include <vla/protothreads.hpp>
 #include <vla/serial.hpp>

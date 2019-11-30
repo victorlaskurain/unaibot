@@ -1,5 +1,5 @@
-#include "pdu_handler_daemon.hpp"
-#include "counters_daemon_queue.hpp"
+#include <vla/pdu_handler_daemon.hpp>
+#include <vla/counters_daemon_queue.hpp>
 #include <vla/registers.hpp>
 #include <vla/timers.hpp>
 #include <util/crc16.h>

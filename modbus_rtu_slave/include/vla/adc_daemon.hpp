@@ -1,7 +1,7 @@
 #ifndef VLA_MODBUS_RTU_SLAVE_ADC_DAEMON
 #define VLA_MODBUS_RTU_SLAVE_ADC_DAEMON
 
-#include "adc_daemon_queue.hpp"
+#include <vla/adc_daemon_queue.hpp>
 #include <vla/protothreads.hpp>
 
 namespace vla {

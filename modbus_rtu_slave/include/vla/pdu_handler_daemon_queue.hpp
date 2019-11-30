@@ -2,9 +2,9 @@
 #define VLA_MODBUS_RTU_SLAVE_PDU_HANDLER_DAEMON_QUEUE
 
 #include <vla/tagged_union_queue.hpp>
-#include "buffer_msg.hpp"
-#include "adc_set_value_msg.hpp"
-#include "counters_set_value_msg.hpp"
+#include <vla/buffer_msg.hpp>
+#include <vla/adc_set_value_msg.hpp>
+#include <vla/counters_set_value_msg.hpp>
 
 namespace vla {
 

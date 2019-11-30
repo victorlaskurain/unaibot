@@ -2,7 +2,7 @@
 #define VLA_MODBUS_RTU_SLAVE_COUNTERS_DAEMON_QUEUE
 
 #include <vla/tagged_union_queue.hpp>
-#include "counters_set_value_msg.hpp"
+#include <vla/counters_set_value_msg.hpp>
 #include <stdint.h>
 
 namespace vla {
