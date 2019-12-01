@@ -58,12 +58,46 @@ namespace vla {
         }
     };
 
-    struct register_values
+    class register_values
     {
-        uint16_t **data = nullptr;
-        uint16_t size   = 0;
-        register_values(uint16_t **data, uint16_t size):data(data), size(size){}
+        register_values *next = nullptr;
+        friend uint16_t* get(register_values *self, uint16_t i)
+        {
+            if (i < self->size) {
+                return &self->data[i];
+            }
+            if (self->next) {
+                return get(self->next, i - self->size);
+            }
+            return nullptr;
+
+        }
+        friend void append(register_values *&self, register_values *other)
+        {
+            if (self) {
+                append(self->next, other);
+            } else {
+                self = other;
+            }
+        }
+        friend void prepend(register_values *&self, register_values *other)
+        {
+            if (self) {
+                other->next = self;
+                self = other;
+            } else {
+                self = other;
+            }
+        }
+    public:
+        template<typename T>
+        register_values(T *data)
+            :register_values(reinterpret_cast<uint16_t*>(data), sizeof *data / 2)
+        {}
+        register_values(uint16_t *data, uint16_t size):data(data), size(size){}
         register_values() = default;
+        uint16_t *data        = nullptr;
+        uint16_t size         = 0;
     };
 
     class pdu_handler : public ptxx_thread, public pdu_handler_base<pdu_handler>
@@ -78,7 +112,8 @@ namespace vla {
         cm_unit_2A          pwm2a;
         adc_state adc;
         counters_state counters;
-        register_values user_data;
+        register_values *user_data      = nullptr;
+        uint16_t         user_data_size = 0;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
         // member functions protected and callable from the parent.
@@ -87,10 +122,6 @@ namespace vla {
         bool is_write_registers_supported()
         {
             return true;
-        }
-        register_values get_user_data()
-        {
-            return user_data;
         }
         bool is_read_coils_supported()
         {
@@ -104,14 +135,8 @@ namespace vla {
         {
             return true;
         }
-        bool is_read_registers_valid_data_address(uint16_t addr, uint16_t count)
-        {
-            return (addr >= 0x0000 && addr + count < 0x0030);
-        }
-        bool is_write_registers_valid_data_address(uint16_t addr, uint16_t count)
-        {
-            return (addr >= 0x0000 && addr + count < 0x0030);
-        }
+        bool is_read_registers_valid_data_address(uint16_t addr, uint16_t count);
+        bool is_write_registers_valid_data_address(uint16_t addr, uint16_t count);
         bool is_write_coils_supported()
         {
             return true;
@@ -147,9 +172,20 @@ namespace vla {
         void operator()();
         bool load_config();
         bool save_config();
-        void set_user_data(register_values ud)
+        void append_user_data(register_values *new_ud)
+        {
+            append(user_data, new_ud);
+            user_data_size += new_ud->size;
+        }
+        void prepend_user_data(register_values *new_ud)
+        {
+            prepend(user_data, new_ud);
+            user_data_size += new_ud->size;
+        }
+        void set_user_data(register_values *ud)
         {
             user_data = ud;
+            user_data_size = ud ? ud->size : 0;
         }
         bool execute_read_single_coil(uint16_t address, bool *bit_value);
         bool execute_write_single_coil(uint16_t address, bool v);

@@ -1,13 +1,13 @@
 #include <vla/main_custom.hpp>
 
 namespace vla {
-    static uint16_t oven1_power;
-    static uint16_t oven2_power;
-    static uint16_t *user_data[] = {
-        &oven1_power,
-        &oven2_power
-    };
-    register_values rv{user_data, sizeof user_data / sizeof user_data[0]};
+    static struct {
+        uint16_t oven1_power = 0;
+        uint16_t oven2_power = 0;
+    } user_data;
+    static register_values rv{&user_data};
+    static uint16_t &oven1_power = user_data.oven1_power;
+    static uint16_t &oven2_power = user_data.oven2_power;
     void init(pdu_handler &pduh)
     {
         // oven outputs
@@ -29,7 +29,7 @@ namespace vla {
         pduh.execute_write_single_coil(PIN_C0_IOM_ADDR      , false);
         pduh.execute_write_single_coil(PIN_C0_ANALOG_IN_ADDR, true);
         // user data
-        pduh.prepend_user_data(&rv);
+        pduh.append_user_data(&rv);
     }
     void loop(pdu_handler &pduh)
     {}

@@ -57,7 +57,7 @@ namespace vla {
 
     struct timestamp_us
     {
-        uint32_t us;
+        uint32_t us = 0;
         explicit timestamp_us(uint32_t us):us(us){}
         timestamp_us(const timestamp_us &other):us(other.us)
         {}

@@ -280,6 +280,7 @@ constexpr uint16_t COUNTER_ADDR_END     =
 constexpr uint16_t USER_DATA_ADDR_BEGIN = COUNTER_ADDR_END;
 
 static_assert(uint16_t(vla::adc_id_t::ADC_MAX) == TC2A_CONFIG_ADDR, "Bad TC2_CONFIG_ADDR");
+static_assert(0x22 == USER_DATA_ADDR_BEGIN, "USER_DATA_ADDR_BEGIN expected to be 0x22");
 
 /**
  * Utility class to parse/generate words containing TC configuration
@@ -357,8 +358,11 @@ bool vla::pdu_handler::execute_write_single_register(uint16_t address, uint16_t 
         to_counter_daemon_q.push(counters_daemon_msg_t{cid, v});
         return true;
     }
-    if (address >= USER_DATA_ADDR_BEGIN && address < USER_DATA_ADDR_BEGIN + user_data.size) {
-        *user_data.data[address - USER_DATA_ADDR_BEGIN] = v;
+    if (user_data && address >= USER_DATA_ADDR_BEGIN) {
+        auto record_ptr = get(user_data, address - USER_DATA_ADDR_BEGIN);
+        if (record_ptr) {
+            *record_ptr = v;
+        }
         return true;
     }
     return false;
@@ -388,12 +392,25 @@ bool vla::pdu_handler::execute_read_single_register(uint16_t address, uint16_t *
         *word = counters.get_value(counter_id_t(address - COUNTER_ADDR_BEGIN));
         return true;
     }
-    if (address >= USER_DATA_ADDR_BEGIN && address < USER_DATA_ADDR_BEGIN + user_data.size) {
-        *word = *user_data.data[address - USER_DATA_ADDR_BEGIN];
+    if (user_data && address >= USER_DATA_ADDR_BEGIN) {
+        auto record_ptr = get(user_data, address - USER_DATA_ADDR_BEGIN);
+        if (record_ptr) {
+            *word = *record_ptr;
+        }
         return true;
     }
     *word = 0;
     return true;
+}
+
+bool vla::pdu_handler::is_read_registers_valid_data_address(uint16_t addr, uint16_t count)
+{
+    return (addr >= 0x0000 && addr + count <= USER_DATA_ADDR_BEGIN + user_data_size);
+}
+
+bool vla::pdu_handler::is_write_registers_valid_data_address(uint16_t addr, uint16_t count)
+{
+    return (addr >= 0x0000 && addr + count <= USER_DATA_ADDR_BEGIN + user_data_size);
 }
 
 bool vla::pdu_handler::load_config()
