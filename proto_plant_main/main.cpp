@@ -1,6 +1,16 @@
 #include <vla/main_custom.hpp>
 
 namespace vla {
+
+    uint8_t to_3bits(uint8_t v)
+    {
+        uint8_t r = 0;
+        for (; v > 0; --v) {
+            r = (r << 1) | 1;
+        }
+        return r;
+    }
+
     static struct {
         uint16_t oven1_power = 0;
         uint16_t oven2_power = 0;
@@ -32,5 +42,10 @@ namespace vla {
         pduh.append_user_data(&rv);
     }
     void loop(pdu_handler &pduh)
-    {}
+    {
+        // set oven control lines
+        set_with_mask<PORTB_t>(
+            0b00111111,
+            (to_3bits(oven1_power) << 0) | (to_3bits(oven2_power) << 3));
+    }
 }
