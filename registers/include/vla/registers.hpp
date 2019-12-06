@@ -472,6 +472,12 @@ namespace vla {
         port_t::ref() = 0x00;
     }
 
+    template<typename port_t>
+    void set_with_mask(uint8_t mask, uint8_t v)
+    {
+        const uint8_t initial_v = port_t::ref();
+        port_t::ref() = (initial_v & ~mask) | (v & mask);
+    }
 }
 
 #endif // VLA_REGISTERS_REGISTERS_HPP
