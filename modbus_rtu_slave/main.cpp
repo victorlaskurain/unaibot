@@ -77,7 +77,7 @@ int main(int argc, char **argv)
         ts4 = clock.get_current_time();
         counters();
         ts5 = clock.get_current_time();
-        loop(pduh);
+        loop(pduh, clock);
         ts6 = clock.get_current_time();
         tr_max       = max(tr_max      , (ts2 - ts1).us);
         pdu_max      = max(pdu_max     , (ts3 - ts2).us);

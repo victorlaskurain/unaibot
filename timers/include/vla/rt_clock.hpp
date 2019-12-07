@@ -136,7 +136,7 @@ namespace vla {
             tick_generator.set_handler(rt_clock::on_tick, static_cast<void*>(this));
         }
         void cancel_alarm(alarm_id id);
-        timestamp_us get_current_time()
+        timestamp_us get_current_time() const
         {
             CliSei s;
             return timestamp_us{now};

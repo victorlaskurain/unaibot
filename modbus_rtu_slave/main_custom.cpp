@@ -3,6 +3,6 @@
 namespace vla {
     void init(pdu_handler &pduh)
     {}
-    void loop(pdu_handler &pduh)
+    void loop(pdu_handler &pduh, rt_clock &clock)
     {}
 }
