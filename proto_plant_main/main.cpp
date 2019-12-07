@@ -30,13 +30,19 @@ namespace vla {
         uint8_t  padding1         = 0;
         uint8_t  grinder2_program = 0;
         uint8_t  padding2         = 0;
+        uint8_t  line1_on         = 0;
+        uint8_t  padding3         = 0;
+        uint8_t  line2_on         = 0;
+        uint8_t  padding4         = 0;
     } user_data;
-    static_assert(sizeof (user_data) == 8, "Unexpected user data size");
+    static_assert(sizeof (user_data) == 12, "Unexpected user data size");
     static register_values rv{&user_data};
     static uint16_t &oven1_power      = user_data.oven1_power;
     static uint16_t &oven2_power      = user_data.oven2_power;
     static uint8_t  &grinder1_program = user_data.grinder1_program;
     static uint8_t  &grinder2_program = user_data.grinder2_program;
+    static uint8_t  &line1_on         = user_data.line1_on;
+    static uint8_t  &line2_on         = user_data.line2_on;
     void init(pdu_handler &pduh)
     {
         // oven outputs
@@ -79,14 +85,24 @@ namespace vla {
     }
     void loop(pdu_handler &pduh, rt_clock &clock)
     {
-        // set oven control lines
-        set_with_mask<PORTB_t>(
-            0b00111111,
-            (to_3bits(oven1_power) << 0) | (to_3bits(oven2_power) << 3));
-
-        // set grinders
         auto now = clock.get_current_time();
-        set_grinder<PORTC1_t>(now, grinder1_program);
-        set_grinder<PORTC2_t>(now, grinder2_program);
+        if (line1_on) {
+            // set oven control lines and grinder
+            set_with_mask<PORTB_t>(0b00000111, to_3bits(oven1_power) << 0);
+            set_grinder<PORTC1_t>(now, grinder1_program);
+        } else {
+            // oven 1 and grinder 1 off
+            set_with_mask<PORTB_t>(0b00000111, 0);
+            set_grinder<PORTC1_t>(now, 0);
+        }
+        if (line2_on) {
+            // set oven control lines and grinder
+            set_with_mask<PORTB_t>(0b00111000, to_3bits(oven2_power) << 3);
+            set_grinder<PORTC2_t>(now, grinder2_program);
+        } else {
+            // oven 1 and grinder 1 off
+            set_with_mask<PORTB_t>(0b00111000, 0);
+            set_grinder<PORTC2_t>(now, 0);
+        }
     }
 }

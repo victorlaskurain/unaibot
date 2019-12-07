@@ -325,7 +325,7 @@ class AnalogTable(RegisterTableBase):
         super().__init__(addresses, descriptions, self._base_address)
 
 class UserDataTable(RegisterTableBase):
-    _register_count = 18
+    _register_count = 20
     _base_address   = 0x0022
     def __init__(self):
         addresses    = ['0x%04x'%(i + self._base_address) for i in range(self._register_count)]
@@ -348,6 +348,8 @@ class UserDataTable(RegisterTableBase):
             'OVEN 2',
             'GRINDER 1',
             'GRINDER 2',
+            'LINE 1 SWITCH',
+            'LINE 2 SWITCH'
         ]
         super().__init__(addresses, descriptions, self._base_address)
 
@@ -445,7 +447,7 @@ def tui_main(stdscr, args):
         elif read_op == READ_ANALOG:
             analog_values    = client.read_holding_registers(0x0000, 10, unit=UNIT_ID).registers
         elif read_op == READ_USER_DATA:
-            user_data_values = client.read_holding_registers(0x0022, 18, unit=UNIT_ID).registers
+            user_data_values = client.read_holding_registers(0x0022, 20, unit=UNIT_ID).registers
         read_op = (read_op + 1) % READ_OP_COUNT
         coil_table.set_data(coils)
         analog_table.set_data(analog_values)
