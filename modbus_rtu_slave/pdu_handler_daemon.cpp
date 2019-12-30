@@ -35,8 +35,9 @@ namespace vla {
         PO_PORTB,
         PO_PORTC,
         PO_PORTD,
-        SAFE_CONFIG_COIL_ADDRESS = 0x100,
-        LOAD_CONFIG_COIL_ADDRESS = 0x101
+        SAFE_CONFIG_COIL_ADDRESS         = 0x100,
+        LOAD_CONFIG_COIL_ADDRESS         = 0x101,
+        SET_PROGRAM_RUNNING_COIL_ADDRESS = 0x102
     };
     template<typename registry_t>
     bool get_bit(uint8_t bit)
@@ -175,6 +176,10 @@ bool vla::pdu_handler::execute_write_single_coil(uint16_t address, bool v)
         return save_config();
     } else if (LOAD_CONFIG_COIL_ADDRESS == address) {
         return load_config();
+    }
+    if (SET_PROGRAM_RUNNING_COIL_ADDRESS == address) {
+        program_running = v;
+        return true;
     }
     const uint8_t registry = address / 8;
     const uint8_t bit      = address % 8;

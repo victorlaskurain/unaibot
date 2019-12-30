@@ -112,8 +112,9 @@ namespace vla {
         cm_unit_2A          pwm2a;
         adc_state adc;
         counters_state counters;
-        register_values *user_data      = nullptr;
-        uint16_t         user_data_size = 0;
+        register_values *user_data       = nullptr;
+        uint16_t         user_data_size  = 0;
+        bool             program_running = true;
         using handler_base = pdu_handler_base<pdu_handler>;
         // this friend declaration let us keep the inherited protected
         // member functions protected and callable from the parent.
@@ -129,7 +130,8 @@ namespace vla {
         }
         bool is_read_coils_valid_data_address(uint16_t addr, uint16_t count)
         {
-            return (addr >= 0x0000 && addr + count - 1 < 0x00D8);   // Output pin space
+            return (addr >= 0x0000 && addr + count - 1 < 0x00D8) || // Output pin space
+                   (addr == 0x0102 && count == 1);                  // running on/off address
         }
         bool is_read_registers_supported()
         {
@@ -145,7 +147,8 @@ namespace vla {
         {
             return (addr >= 0x0048 && addr + count < 0x00d8) ||  // Output pin space
                    (addr == 0x0100 && count == 1) ||             // save address
-                   (addr == 0x0101 && count == 1);               // load address
+                   (addr == 0x0101 && count == 1) ||             // load address
+                   (addr == 0x0102 && count == 1);               // running on/off address
         }
         bool is_write_single_coil_valid_data_address(uint16_t addr)
         {
@@ -172,6 +175,10 @@ namespace vla {
         void operator()();
         bool load_config();
         bool save_config();
+        bool is_program_running()
+        {
+            return program_running;
+        }
         void append_user_data(register_values *new_ud)
         {
             append(user_data, new_ud);

@@ -476,6 +476,10 @@ def tui_main(stdscr, args):
             action = ('write_coils', 0x0100, [1])
         elif ch == ord('l'):
             action = ('write_coils', 0x0101, [1])
+        elif ch == ord('r'):
+            action = ('write_coils', 0x0102, [1])
+        elif ch == ord('R'):
+            action = ('write_coils', 0x0102, [0])
         else:
             action = tables.current().handle_ch(ch)
         tl_attr = curses.A_NORMAL
